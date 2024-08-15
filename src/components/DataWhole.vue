@@ -1,7 +1,6 @@
 <template>
   <v-container>
-    <h2>Trading House and Line Chart with data filter({{ filteredX }}) / ({{ counted }})</h2>
-
+    <h2> Complete data in Line Chart with data filter ({{ filteredX }}) / ({{ counted }})</h2>
     <v-row align="center" justify="space-between">
       <v-col cols="4">
         <v-text-field
@@ -33,6 +32,7 @@
 </template>
 
 <script setup lang="ts">
+
   import { computed, onMounted, ref, watch } from 'vue'
   import * as d3 from 'd3'
   import EnergyServices from '@/services/EnergyServices'
@@ -50,10 +50,10 @@
   // Define reactive state
   const width = 800
   const height = 500
-  const minAmount = ref<number>(0)
-  const maxAmount = ref<number>(9999)
-  const counted = ref<number>(0)
-  const filteredX = ref<number>(0)
+  const minAmount = ref(0)
+  const maxAmount = ref(9999)
+  const counted = ref(0)
+  const filteredX = ref(0)
   const originalData = ref<{ date: string; amount: number }[]>([])
 
   // Compute filtered data based on min and max amount

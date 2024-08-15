@@ -1,7 +1,7 @@
 <template>
   <div class="app-wrapper">
     <header>
-      <a class="logo" href="#">Tading<span> House</span></a>
+      <a class="logo" href="#">Trading<span> Data</span></a>
       <nav :class="{ opened: isMenuOpened }">
         <img class="close" :src="closeSvgPath" @click="closeMenu">
         <ul>
@@ -20,12 +20,10 @@
 </template>
 
 <script lang="ts" setup>
-
   import { computed, onMounted, ref } from 'vue'
 
   import closeSvgPath from '@/assets/close.svg'
   import menuSvgPath from '@/assets/menu.svg'
-
   import TradeDaily from '@/components/DataDaily.vue'
   import TradeWeekly from './components/DataWeekly.vue'
   import TradeMonthly from './components/DataMonthly.vue'
@@ -47,6 +45,7 @@
     '/weekly': TradeWeekly,
     '/maximum': TradeMaximum,
     '/whole': TradeWhole,
+    '/': TradeDaily,
   }
 
   const currentPath = ref<string>(window.location.hash)
