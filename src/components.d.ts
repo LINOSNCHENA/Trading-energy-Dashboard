@@ -7,8 +7,12 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    AppFooter: typeof import('./components/AppFooter.vue')['default']
-    HelloWorld: typeof import('./components/HelloWorld.vue')['default']
+    DataBalance: typeof import('./components/DataBalance.vue')['default']
+    DataDaily: typeof import('./components/DataDaily.vue')['default']
+    DataMaximum: typeof import('./components/DataMaximum.vue')['default']
+    DataMonthly: typeof import('./components/DataMonthly.vue')['default']
+    DataWeekly: typeof import('./components/DataWeekly.vue')['default']
+    DataWhole: typeof import('./components/DataWhole.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }
