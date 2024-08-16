@@ -1,5 +1,3 @@
-// import { useAuthStore } from '../stores/AppsAuth'
-
 import { useAuthStore } from '../stores/AppsAuth'
 
 class AuthService {

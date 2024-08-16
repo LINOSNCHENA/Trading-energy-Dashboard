@@ -39,15 +39,7 @@
   import { computed, onMounted, ref, watch } from 'vue'
   import * as d3 from 'd3'
   import EnergyServices from '@/services/EnergyServices'
-  interface TimeSeriesDaily {
-    [key: string]: {
-      '1. open': string;
-      '2. high': string;
-      '3. low': string;
-      '4. close': string;
-      '5. volume': string;
-    };
-  }
+  import { TimeSeriesDaily } from '@/types/types'
 
   const minAmount = ref<number | null>(null)
   const maxAmount = ref<number | null>(null)
@@ -148,24 +140,23 @@
       .attr('fill', 'lightblue')
       .attr('opacity', 0.5)
       .attr('stroke', 'none')
-      .attr('d', () => {
-        if (minMaxRange.length === 0) return ''
-        return area(minMaxRange)
-      })
+      .attr('d', area)
+
+    function createNewObjectsFromProxies (x: any[]) {
+      return x.map((proxy: any) => ({
+        ...proxy, // Spread the existing properties
+      // You can add or modify properties here if needed
+      }))
+    }
+
+    const currentYearDataPoint = createNewObjectsFromProxies(currentYearDataPoints)
 
     g.append('path')
-      .datum(currentYearDataPoints)
+      .datum(currentYearDataPoint)
       .attr('fill', 'none')
       .attr('stroke', 'red')
       .attr('stroke-width', 1.5)
-      .attr('d', () => {
-        if (currentYearDataPoints.length === 0) {
-          console.log('No data points for the current year.')
-          return ''
-        }
-        console.log('Data points for the line:', currentYearDataPoints)
-        return line(currentYearDataPoints)
-      })
+      .attr('d', line)
 
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([1, 10])
