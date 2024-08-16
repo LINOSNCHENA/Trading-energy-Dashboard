@@ -2,19 +2,34 @@
   <div class="app-wrapper">
     <header>
       <a class="logo" href="#">
-        TRADING
-        <span>User: {{ loginUser }}</span>
+        <span class="logo-text">DASHBOARD</span>
+        <span class="user-info">| User: {{ loginUser }}</span>
       </a>
-      <nav :class="{ opened: isMenuOpened }">
-        <img alt="Close Menu" class="close" :src="closeSvgPath" @click="closeMenu">
+      <nav aria-label="Main Navigation" :class="{ opened: isMenuOpened }">
+        <img
+          alt="Close Menu"
+          aria-label="Close Menu"
+          class="close"
+          role="button"
+          :src="closeSvgPath"
+          @click="closeMenu"
+        >
         <ul>
           <li><a href="#/daily">1. Daily Summary</a></li>
           <li><a href="#/weekly">2. Weekly Overview</a></li>
           <li><a href="#/monthly">3. Monthly Trends</a></li>
-          <li><a href="#/area">4. Area Trends</a></li>
+          <li><a href="#/minimum">4. Minimum Price Trends</a></li>
+          <li><a href="#/area">5. Area Analysis</a></li>
         </ul>
       </nav>
-      <img alt="Open Menu" class="menu" :src="menuSvgPath" @click="openMenu">
+      <img
+        alt="Open Menu"
+        aria-label="Open Menu"
+        class="menu"
+        role="button"
+        :src="menuSvgPath"
+        @click="openMenu"
+      >
     </header>
     <component :is="currentView" />
   </div>
@@ -29,6 +44,7 @@
   import TradeWeekly from './components/DataWeekly.vue'
   import TradeMonthly from './components/DataMonthly.vue'
   import TradeArea from './components/DataMaximum.vue'
+  import TradeMinimum from './components/DataMinimum.vue'
   import { useAuthStore } from './stores/AppsAuth'
   const storeAUT = useAuthStore()
   const loginUser = ref()
@@ -42,6 +58,7 @@
     '/monthly': TradeMonthly,
     '/weekly': TradeWeekly,
     '/area': TradeArea,
+    '/minimum': TradeMinimum,
     '/': TradeDaily,
     '*': { template: '<h1>Not Found</h1>' },
   }
@@ -111,7 +128,8 @@ h1, h2 {
   flex-direction: column;
   width: 100vw;
   height: 100vh;
-  background: red;
+  background: white(202, 93, 93);
+
 }
 
 header {

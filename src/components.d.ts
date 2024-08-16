@@ -11,6 +11,7 @@ declare module 'vue' {
     DataBalance: typeof import('./components/DataBalance.vue')['default']
     DataDaily: typeof import('./components/DataDaily.vue')['default']
     DataMaximum: typeof import('./components/DataMaximum.vue')['default']
+    DataMinimum: typeof import('./components/DataMinimum.vue')['default']
     DataMonthly: typeof import('./components/DataMonthly.vue')['default']
     DataWeekly: typeof import('./components/DataWeekly.vue')['default']
     DataWhole: typeof import('./components/DataWhole.vue')['default']

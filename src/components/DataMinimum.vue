@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <div class="header-container">
-      <h2>Min-Max Area(1) records of complete datapoints: {{ filteredX }} / {{ counted }}</h2>
+      <h2>Min-Max Area(2)  of complete datapoints: {{ filteredX }} / {{ counted }}</h2>
     </div>
 
     <v-row align="center" class="filter-row" justify="space-evenly" no-gutters>
@@ -226,7 +226,7 @@
   flex-direction: row;
   width: 100%;
   max-height: 15vh;
-
+  background: green;
 }
 
 .chart-card {
@@ -236,6 +236,7 @@
 }
 
 svg {
+  border: 3px solid green;
   width: 100%;
   min-height: 60vh;
   max-height: 90vh;
