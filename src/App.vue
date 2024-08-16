@@ -1,27 +1,30 @@
 <template>
   <div class="app-wrapper">
     <header>
-      <a class="logo" href="#">Trading<span> Data</span></a>
+      <a class="logo" href="#">
+        TRADING
+        <span>User: {{ loginUser }}</span>
+      </a>
       <nav :class="{ opened: isMenuOpened }">
-        <img class="close" :src="closeSvgPath" @click="closeMenu">
+        <img alt="Close Menu" class="close" :src="closeSvgPath" @click="closeMenu">
         <ul>
-          <li><a href="#/daily">1.Daily</a></li>
-          <li><a href="#/weekly">2. Weekly</a></li>
-          <li><a href="#/monthly">3. Monthly</a></li>
-          <li><a href="#/maximum">4. Maximum</a></li>
-          <li><a href="#/balance">5. Balance</a></li>
-          <li><a href="#/whole">6. Whole</a></li>
+          <li><a href="#/daily">Daily Summary</a></li>
+          <li><a href="#/weekly">Weekly Overview</a></li>
+          <li><a href="#/monthly">Monthly Trends</a></li>
+          <li><a href="#/maximum">Maximum Values</a></li>
+          <li><a href="#/balance">Account Balance</a></li>
+          <li><a href="#/whole">Complete Data</a></li>
         </ul>
       </nav>
-      <img class="menu" :src="menuSvgPath" @click="openMenu">
+      <img alt="Open Menu" class="menu" :src="menuSvgPath" @click="openMenu">
     </header>
     <component :is="currentView" />
   </div>
 </template>
 
 <script lang="ts" setup>
-  import { computed, onMounted, ref } from 'vue'
 
+  import { computed, onMounted, ref } from 'vue'
   import closeSvgPath from '@/assets/close.svg'
   import menuSvgPath from '@/assets/menu.svg'
   import TradeDaily from '@/components/DataDaily.vue'
@@ -33,6 +36,7 @@
 
   import { useAuthStore } from './stores/AppsAuth'
   const storeAUT = useAuthStore()
+  const loginUser = ref()
 
   interface Routes {
     [key: string]: any;
@@ -46,13 +50,16 @@
     '/maximum': TradeMaximum,
     '/whole': TradeWhole,
     '/': TradeDaily,
+    '*': { template: '<h1>Not Found</h1>' },
   }
 
   const currentPath = ref<string>(window.location.hash)
   const isMenuOpened = ref<boolean>(false)
 
   const currentView = computed(() => {
-    return routes[currentPath.value.slice(1) || '/'] || { template: '<h1>Not Found</h1>' }
+    const path = currentPath.value.slice(1) || '/'
+    closeMenu()
+    return routes[path] || routes['*']
   })
 
   const openMenu = (): void => {
@@ -67,7 +74,8 @@
     window.addEventListener('hashchange', () => {
       currentPath.value = window.location.hash
     })
-    await storeAUT.user
+    const user = await storeAUT.user
+    loginUser.value = user.slice(0, -10)
   })
 </script>
 
@@ -101,16 +109,16 @@ a {
   font-size: 1.3rem;
 }
 
-h1,
-h2 {
+h1, h2 {
   color: var(--color-primary);
 }
 
 .app-wrapper {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  width: 100%;
+  width: 100vw;  /* Full viewport width */
+  height: 100vh; /* Full viewport height */
+  background: red; /* Background color for visibility */
 }
 
 header {
@@ -174,7 +182,8 @@ nav {
 
 @media only screen and (min-width: 680px) {
   body {
-    margin: 0; /* Adjust as needed */
+    margin: 0;
+    /* Adjust as needed */
   }
 }
 
@@ -215,7 +224,7 @@ nav {
 
 @media only screen and (min-width: 1200px) {
   .app-wrapper {
-    width: 1200px;
+    width: 1200px; /* Centered content with fixed width on large screens */
     margin: 0 auto;
   }
 
