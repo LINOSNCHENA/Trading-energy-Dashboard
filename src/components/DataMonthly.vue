@@ -3,7 +3,6 @@
     <div class="header-container">
       <h2>Monthly records of complete datapoints: {{ filteredX }} / {{ counted }}</h2>
     </div>
-
     <v-row align="center" class="filter-row" justify="space-evenly" no-gutters>
       <v-col cols="12" sm="4">
         <v-text-field
@@ -39,25 +38,14 @@
   import { computed, onMounted, ref, watch } from 'vue'
   import * as d3 from 'd3'
   import EnergyServices from '@/services/EnergyServices'
+  import { TimeSeriesDaily } from '@/types/types'
 
-  interface TimeSeriesDaily {
-    [key: string]: {
-      '1. open': string;
-      '2. high': string;
-      '3. low': string;
-      '4. close': string;
-      '5. volume': string;
-    };
-  }
-
-  // Define reactive state
   const minAmount = ref<number | null>(null)
   const maxAmount = ref<number | null>(null)
   const counted = ref(0)
   const filteredX = ref(0)
   const originalData = ref<{ date: string; amount: number }[]>([])
 
-  // Computed properties to calculate min and max values from originalData
   const calculatedMaxAmount = computed(() => {
     const amounts = originalData.value.map(item => item.amount)
     return amounts.length > 0 ? Math.max(...amounts) : null
@@ -68,25 +56,56 @@
     return amounts.length > 0 ? Math.min(...amounts) : null
   })
 
-  // Filter the data based on the min and max values
   const filteredData = computed(() => {
     const min = minAmount.value ?? calculatedMinAmount.value ?? 0
     const max = maxAmount.value ?? calculatedMaxAmount.value ?? Infinity
     return originalData.value.filter(d => d.amount >= min && d.amount <= max)
   })
 
+  function getMonthYear (date: string): string {
+    const currentDate = new Date(date)
+    const month = (currentDate.getMonth() + 1).toString().padStart(2, '0')
+    const year = currentDate.getFullYear()
+    return `${year}-${month}`
+  }
+
+  function calculateMonthlyAverages (data: { date: string; amount: number }[]): { date: string; amount: number }[] {
+    const monthlyTotals: Record<string, number> = {}
+    const monthlyCounts: Record<string, number> = {}
+
+    for (const entry of data) {
+      const monthYear = getMonthYear(entry.date)
+      if (!monthlyTotals[monthYear]) {
+        monthlyTotals[monthYear] = 0
+        monthlyCounts[monthYear] = 0
+      }
+      monthlyTotals[monthYear] += entry.amount
+      monthlyCounts[monthYear] += 1
+    }
+
+    const monthlyAverages: { date: string; amount: number }[] = []
+    for (const monthYear in monthlyTotals) {
+      monthlyAverages.push({
+        date: monthYear,
+        amount: monthlyTotals[monthYear] / monthlyCounts[monthYear],
+      })
+    }
+
+    return monthlyAverages
+  }
+
   const drawChart = () => {
     const svgElement = d3.select<SVGSVGElement, unknown>('svg')
     const svgContainer = svgElement.node()?.parentNode as HTMLElement
     const containerWidth = svgContainer?.clientWidth || 800
-    const containerHeight = Math.min(svgContainer?.clientHeight || 500, window.innerHeight * 0.75) // Limit height to 75% of viewport height
+    const containerHeight = Math.min(svgContainer?.clientHeight || 500, window.innerHeight * 0.75)
 
-    const data = filteredData.value
+    const data = calculateMonthlyAverages(filteredData.value)
     filteredX.value = data.length
-
     if (data.length === 0) return
 
-    const parseTime = d3.timeParse('%Y-%m-%d')
+    const parseTime = d3.timeParse('%Y-%m')
+    const formatTime = d3.timeFormat('%Y-%m')
     const x = d3.scaleTime()
       .domain(d3.extent(data, d => parseTime(d.date) as Date) as [Date, Date])
       .range([0, containerWidth - 80])
@@ -111,7 +130,7 @@
 
     const xAxis = g.append('g')
       .attr('transform', `translate(0,${containerHeight - 60})`)
-      .call(d3.axisBottom(x).tickFormat(d => d3.timeFormat('%b-%y')(d as Date)))
+      .call(d3.axisBottom(x).tickFormat(d => formatTime(d as Date)))
 
     const yAxis = g.append('g')
       .call(d3.axisLeft(y))
@@ -131,17 +150,16 @@
         const newX = event.transform.rescaleX(x)
         const newY = event.transform.rescaleY(y)
 
-        xAxis.call(d3.axisBottom(newX).tickFormat(d => d3.timeFormat('%b-%y')(d as Date)))
+        xAxis.call(d3.axisBottom(newX).tickFormat(d => formatTime(d as Date)))
         yAxis.call(d3.axisLeft(newY))
 
         path.attr('d', line.x(d => newX(parseTime(d.date) as Date))
           .y(d => newY(d.amount)))
       })
 
-    svgElement.call(zoom as unknown as d3.ZoomBehavior<SVGSVGElement, unknown>)
+    svgElement.call(zoom)
   }
 
-  // Watch for changes in minAmount and maxAmount and update the chart accordingly
   watch([minAmount, maxAmount], () => {
     drawChart()
   })
@@ -183,6 +201,7 @@
   text-transform: uppercase;
 }
 
+/* General styles */
 .filter-row {
   margin-bottom: 1em;
   overflow: visible;
@@ -191,6 +210,7 @@
   max-height: 15vh;
   background: green;
 }
+
 .chart-card {
   margin: 0;
   padding: 0;
@@ -210,13 +230,12 @@ svg {
 
 .responsive-text-field {
   width: 100%;
-  max-width: 30%;
 }
 
+/* Mobile styles */
 @media (max-width: 600px) {
   .filter-row {
-    flex-direction: row;
-    flex-direction: row;
+    flex-direction: column;
     flex-wrap: wrap;
     gap: 0.5em;
   }
@@ -230,33 +249,36 @@ svg {
   }
 }
 
-@media (min-width: 600px) {
+/* Tablet and small desktop styles */
+@media (min-width: 600px) and (max-width: 960px) {
   .filter-row {
     flex-direction: row;
-    flex-wrap: wrap;
     gap: 0.5em;
   }
 
   .responsive-text-field {
-    max-width: 100%;
+    max-width: 30%;
     background: pink;
   }
 }
 
+/* Large desktop styles */
 @media (min-width: 960px) {
   .filter-row {
     flex-direction: row;
   }
 
   .responsive-text-field {
-    max-width: 100%;
+    max-width: 30%;
     background: pink;
   }
+
   .chart-card {
-  margin: 0;
-  padding: 0;
-  flex-grow: 1;
-}
+    margin: 0;
+    padding: 0;
+    flex-grow: 1;
+  }
+
   .responsive-btn {
     width: auto;
     max-width: 400px;

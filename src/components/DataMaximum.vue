@@ -29,7 +29,7 @@
 
     <v-card class="chart-card">
       <v-card-text>
-        <svg ref="chart" aria-label="Line Chart" />
+        <svg ref="chart" aria-label="Line and Area Chart" />
       </v-card-text>
     </v-card>
   </v-container>
@@ -39,89 +39,91 @@
   import { computed, onMounted, ref, watch } from 'vue'
   import * as d3 from 'd3'
   import EnergyServices from '@/services/EnergyServices'
-  import { TimeSeriesDaily } from '@/types/types'
+  interface TimeSeriesDaily {
+    [key: string]: {
+      '1. open': string;
+      '2. high': string;
+      '3. low': string;
+      '4. close': string;
+      '5. volume': string;
+    };
+  }
 
   const minAmount = ref<number | null>(null)
   const maxAmount = ref<number | null>(null)
   const counted = ref(0)
   const filteredX = ref(0)
   const originalData = ref<{ date: string; amount: number }[]>([])
+  const currentYear = new Date().getFullYear()
 
-  // Computed properties to calculate min and max values from originalData
-  const calculatedMaxAmount = computed(() => {
-    const amounts = originalData.value.map(item => item.amount)
-    return amounts.length > 0 ? Math.max(...amounts) : null
-  })
-
-  const calculatedMinAmount = computed(() => {
-    const amounts = originalData.value.map(item => item.amount)
-    return amounts.length > 0 ? Math.min(...amounts) : null
-  })
-
-  // Filter the data based on the min and max values
   const filteredData = computed(() => {
-    const min = minAmount.value ?? calculatedMinAmount.value ?? 0
-    const max = maxAmount.value ?? calculatedMaxAmount.value ?? Infinity
+    const min = minAmount.value ?? 0
+    const max = maxAmount.value ?? Infinity
     return originalData.value.filter(d => d.amount >= min && d.amount <= max)
   })
 
-  function calculateWeeklyAverages (data: { date: string; amount: number }[]): { date: string; amount: number }[] {
-    const weeklyTotals: Record<string, number> = {}
-    const weeklyCounts: Record<string, number> = {}
-
-    function getStartOfWeek (date: string): string {
-      const currentDate = new Date(date)
-      const dayOfWeek = currentDate.getDay()
-      const daysSinceMonday = (dayOfWeek + 6) % 7
-      const startOfWeekDate = new Date(currentDate.setDate(currentDate.getDate() - daysSinceMonday))
-      return startOfWeekDate.toISOString().split('T')[0] // Format to YYYY-MM-DD
-    }
-
-    // Aggregate data by week
-    for (const entry of data) {
-      const weekStart = getStartOfWeek(entry.date)
-      if (!weeklyTotals[weekStart]) {
-        weeklyTotals[weekStart] = 0
-        weeklyCounts[weekStart] = 0
-      }
-      weeklyTotals[weekStart] += entry.amount
-      weeklyCounts[weekStart] += 1
-    }
-
-    // Calculate weekly averages
-    const weeklyAverages: { date: string; amount: number }[] = []
-    for (const week in weeklyTotals) {
-      weeklyAverages.push({
-        date: week,
-        amount: weeklyTotals[week] / weeklyCounts[week],
-      })
-    }
-
-    return weeklyAverages
+  function getDayMonth (date: string): string {
+    const currentDate = new Date(date)
+    const day = String(currentDate.getDate()).padStart(2, '0')
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0')
+    return `${month}-${day}`
   }
 
-  const drawChart = () => {
+  function calculateMinMaxRange (data: { date: string; amount: number }[]): { date: string; min: number; max: number }[] {
+    const dayStats: Record<string, { min: number; max: number }> = {}
+
+    for (const entry of data) {
+      const dayMonth = getDayMonth(entry.date)
+      if (!dayStats[dayMonth]) {
+        dayStats[dayMonth] = { min: entry.amount, max: entry.amount }
+      } else {
+        dayStats[dayMonth].min = Math.min(dayStats[dayMonth].min, entry.amount)
+        dayStats[dayMonth].max = Math.max(dayStats[dayMonth].max, entry.amount)
+      }
+    }
+
+    return Object.keys(dayStats).map(dayMonth => ({
+      date: dayMonth,
+      min: dayStats[dayMonth].min,
+      max: dayStats[dayMonth].max,
+    }))
+  }
+
+  function calculateCurrentYearData (data: { date: string; amount: number }[]): { date: string; amount: number }[] {
+    return data.filter(entry => new Date(entry.date).getFullYear() === currentYear)
+  }
+
+  function drawChart () {
     const svgElement = d3.select<SVGSVGElement, unknown>('svg')
     const svgContainer = svgElement.node()?.parentNode as HTMLElement
     const containerWidth = svgContainer?.clientWidth || 800
-    const containerHeight = Math.min(svgContainer?.clientHeight || 500, window.innerHeight * 0.75) // Limit height to 75% of viewport height
+    const containerHeight = Math.min(svgContainer?.clientHeight || 500, window.innerHeight * 0.75)
 
-    const data = calculateWeeklyAverages(filteredData.value)
-    filteredX.value = data.length
-    if (data.length === 0) return
+    const allData = filteredData.value
+    const minMaxRange = calculateMinMaxRange(allData)
+    const currentYearDataPoints = calculateCurrentYearData(allData)
 
-    const parseTime = d3.timeParse('%Y-%m-%d')
+    if (minMaxRange.length === 0 && currentYearDataPoints.length === 0) return
+
+    const parseDate = d3.timeParse('%m-%d')
+    const formatDate = d3.timeFormat('%b-%d')
+
     const x = d3.scaleTime()
-      .domain(d3.extent(data, d => parseTime(d.date) as Date) as [Date, Date])
+      .domain(d3.extent(minMaxRange, d => parseDate(d.date) as Date) as [Date, Date])
       .range([0, containerWidth - 80])
 
     const y = d3.scaleLinear()
-      .domain([0, d3.max(data, d => d.amount) as number])
+      .domain([0, d3.max(minMaxRange, d => d.max) as number])
       .nice()
       .range([containerHeight - 60, 0])
 
+    const area = d3.area<{ date: string; min: number; max: number }>()
+      .x(d => x(parseDate(d.date) as Date))
+      .y0(d => y(d.min))
+      .y1(d => y(d.max))
+
     const line = d3.line<{ date: string; amount: number }>()
-      .x(d => x(parseTime(d.date) as Date))
+      .x(d => x(parseDate(d.date) as Date))
       .y(d => y(d.amount))
 
     svgElement
@@ -135,17 +137,35 @@
 
     const xAxis = g.append('g')
       .attr('transform', `translate(0,${containerHeight - 60})`)
-      .call(d3.axisBottom(x).tickFormat(d => d3.timeFormat('%b-%y')(d as Date)))
+      .call(d3.axisBottom(x).tickFormat(d => formatDate(d as Date)))
 
     const yAxis = g.append('g')
       .call(d3.axisLeft(y))
 
-    const path = g.append('path')
-      .datum(data)
+    // Draw the area plot
+    g.append('path')
+      .datum(minMaxRange)
+      .attr('fill', 'lightblue')
+      .attr('opacity', 0.5)
+      .attr('stroke', 'none')
+      .attr('d', () => {
+        if (minMaxRange.length === 0) return ''
+        return area(minMaxRange)
+      })
+
+    g.append('path')
+      .datum(currentYearDataPoints)
       .attr('fill', 'none')
-      .attr('stroke', 'steelblue')
+      .attr('stroke', 'red')
       .attr('stroke-width', 1.5)
-      .attr('d', line)
+      .attr('d', () => {
+        if (currentYearDataPoints.length === 0) {
+          console.log('No data points for the current year.')
+          return ''
+        }
+        console.log('Data points for the line:', currentYearDataPoints)
+        return line(currentYearDataPoints)
+      })
 
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([1, 10])
@@ -155,17 +175,24 @@
         const newX = event.transform.rescaleX(x)
         const newY = event.transform.rescaleY(y)
 
-        xAxis.call(d3.axisBottom(newX).tickFormat(d => d3.timeFormat('%b-%y')(d as Date)))
+        xAxis.call(d3.axisBottom(newX).tickFormat(d => formatDate(d as Date)))
         yAxis.call(d3.axisLeft(newY))
 
-        path.attr('d', line.x(d => newX(parseTime(d.date) as Date))
-          .y(d => newY(d.amount)))
+        g.selectAll('path')
+          .attr('d', (d, i, nodes) => {
+            const type = d3.select(nodes[i]).attr('stroke') ? 'line' : 'area'
+            return type === 'line'
+              ? line.x(d => newX(parseDate(d.date) as Date))
+                .y(d => newY(d.amount))(d as any)
+              : area.x(d => newX(parseDate(d.date) as Date))
+                .y0(d => newY(d.min))
+                .y1(d => newY(d.max))(d as any)
+          })
       })
 
-    svgElement.call(zoom as unknown as d3.ZoomBehavior<SVGSVGElement, unknown>)
+    svgElement.call(zoom)
   }
 
-  // Watch for changes in minAmount and maxAmount and update the chart accordingly
   watch([minAmount, maxAmount], () => {
     drawChart()
   })
@@ -184,11 +211,6 @@
           date,
           amount: filteredDataPoints[index],
         }))
-        counted.value = originalData.value.length
-
-        // Initialize minAmount and maxAmount with computed values
-        minAmount.value = calculatedMinAmount.value
-        maxAmount.value = calculatedMaxAmount.value
 
         drawChart()
       } else {
@@ -207,7 +229,6 @@
   text-transform: uppercase;
 }
 
-/* General styles */
 .filter-row {
   margin-bottom: 1em;
   overflow: visible;
@@ -238,7 +259,6 @@ svg {
   width: 100%;
 }
 
-/* Mobile styles */
 @media (max-width: 600px) {
   .filter-row {
     flex-direction: column;
@@ -255,7 +275,6 @@ svg {
   }
 }
 
-/* Tablet and small desktop styles */
 @media (min-width: 600px) and (max-width: 960px) {
   .filter-row {
     flex-direction: row;
@@ -268,7 +287,6 @@ svg {
   }
 }
 
-/* Large desktop styles */
 @media (min-width: 960px) {
   .filter-row {
     flex-direction: row;

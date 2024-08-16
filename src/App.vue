@@ -11,6 +11,7 @@
           <li><a href="#/daily">1. Daily Summary</a></li>
           <li><a href="#/weekly">2. Weekly Overview</a></li>
           <li><a href="#/monthly">3. Monthly Trends</a></li>
+          <li><a href="#/area">4. Area Trends</a></li>
         </ul>
       </nav>
       <img alt="Open Menu" class="menu" :src="menuSvgPath" @click="openMenu">
@@ -27,6 +28,7 @@
   import TradeDaily from '@/components/DataDaily.vue'
   import TradeWeekly from './components/DataWeekly.vue'
   import TradeMonthly from './components/DataMonthly.vue'
+  import TradeArea from './components/DataMaximum.vue'
   import { useAuthStore } from './stores/AppsAuth'
   const storeAUT = useAuthStore()
   const loginUser = ref()
@@ -39,6 +41,7 @@
     '/daily': TradeDaily,
     '/monthly': TradeMonthly,
     '/weekly': TradeWeekly,
+    '/area': TradeArea,
     '/': TradeDaily,
     '*': { template: '<h1>Not Found</h1>' },
   }
@@ -91,7 +94,7 @@ body {
   font-family: "Roboto", sans-serif;
   background: var(--bg-color);
   color: var(--color-primary);
-  overflow: hidden; /* Prevent scrolling if not needed */
+  overflow: hidden;
 }
 
 a {
@@ -106,9 +109,9 @@ h1, h2 {
 .app-wrapper {
   display: flex;
   flex-direction: column;
-  width: 100vw;  /* Full viewport width */
-  height: 100vh; /* Full viewport height */
-  background: red; /* Background color for visibility */
+  width: 100vw;
+  height: 100vh;
+  background: red;
 }
 
 header {
@@ -173,7 +176,6 @@ nav {
 @media only screen and (min-width: 680px) {
   body {
     margin: 0;
-    /* Adjust as needed */
   }
 }
 
@@ -214,7 +216,7 @@ nav {
 
 @media only screen and (min-width: 1200px) {
   .app-wrapper {
-    width: 1200px; /* Centered content with fixed width on large screens */
+    width: 1200px;
     margin: 0 auto;
   }
 

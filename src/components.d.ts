@@ -7,6 +7,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    copy: typeof import('./components/DataMaximum copy.vue')['default']
     DataBalance: typeof import('./components/DataBalance.vue')['default']
     DataDaily: typeof import('./components/DataDaily.vue')['default']
     DataMaximum: typeof import('./components/DataMaximum.vue')['default']
