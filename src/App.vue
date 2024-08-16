@@ -8,12 +8,9 @@
       <nav :class="{ opened: isMenuOpened }">
         <img alt="Close Menu" class="close" :src="closeSvgPath" @click="closeMenu">
         <ul>
-          <li><a href="#/daily">Daily Summary</a></li>
-          <li><a href="#/weekly">Weekly Overview</a></li>
-          <li><a href="#/monthly">Monthly Trends</a></li>
-          <li><a href="#/maximum">Maximum Values</a></li>
-          <li><a href="#/balance">Account Balance</a></li>
-          <li><a href="#/whole">Complete Data</a></li>
+          <li><a href="#/daily">1. Daily Summary</a></li>
+          <li><a href="#/weekly">2. Weekly Overview</a></li>
+          <li><a href="#/monthly">3. Monthly Trends</a></li>
         </ul>
       </nav>
       <img alt="Open Menu" class="menu" :src="menuSvgPath" @click="openMenu">
@@ -30,10 +27,6 @@
   import TradeDaily from '@/components/DataDaily.vue'
   import TradeWeekly from './components/DataWeekly.vue'
   import TradeMonthly from './components/DataMonthly.vue'
-  import TradeMaximum from './components/DataMaximum.vue'
-  import TradeBalance from '@/components/DataBalance.vue'
-  import TradeWhole from './components/DataWhole.vue'
-
   import { useAuthStore } from './stores/AppsAuth'
   const storeAUT = useAuthStore()
   const loginUser = ref()
@@ -45,10 +38,7 @@
   const routes: Routes = {
     '/daily': TradeDaily,
     '/monthly': TradeMonthly,
-    '/balance': TradeBalance,
     '/weekly': TradeWeekly,
-    '/maximum': TradeMaximum,
-    '/whole': TradeWhole,
     '/': TradeDaily,
     '*': { template: '<h1>Not Found</h1>' },
   }
