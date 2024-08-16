@@ -1,32 +1,35 @@
 <template>
   <v-container>
-    <h2> Weekly data in and Line Chart with data filter({{ filteredX }}) / ({{ counted }})</h2>
+    <div class="header-container">
+      <h2>Weekly records of complete datapoints: {{ filteredX }} / {{ counted }}</h2>
+    </div>
 
-    <v-row align="center" justify="space-between">
-      <v-col cols="4">
+    <v-row align="center" class="filter-row" justify="space-evenly" no-gutters>
+      <v-col cols="12" sm="4">
         <v-text-field
           v-model.number="minAmount"
-          label="Min Amount"
-          placeholder="Enter min amount"
+          aria-label="Minimum Price"
+          class="responsive-text-field"
+          label="Minimum Price"
+          placeholder="Enter minimum price"
           type="number"
         />
       </v-col>
-      <v-col cols="4">
+      <v-col cols="12" sm="4">
         <v-text-field
           v-model.number="maxAmount"
-          label="Max Amount"
-          placeholder="Enter max amount"
+          aria-label="Maximum Price"
+          class="responsive-text-field"
+          label="Maximum Price"
+          placeholder="Enter maximum price"
           type="number"
         />
-      </v-col>
-      <v-col cols="4">
-        <v-btn color="primary" @click="updateChart">Apply Filter</v-btn>
       </v-col>
     </v-row>
 
-    <v-card>
+    <v-card class="chart-card">
       <v-card-text>
-        <svg ref="chart" />
+        <svg ref="chart" aria-label="Line Chart" />
       </v-card-text>
     </v-card>
   </v-container>
@@ -48,68 +51,71 @@
   }
 
   // Define reactive state
-  const width = 800
-  const height = 500
-  const minAmount = ref(0)
-  const maxAmount = ref(9999)
+  const minAmount = ref<number | null>(null)
+  const maxAmount = ref<number | null>(null)
   const counted = ref(0)
   const filteredX = ref(0)
   const originalData = ref<{ date: string; amount: number }[]>([])
 
-  // Compute filtered data based on min and max amount
+  // Computed properties to calculate min and max values from originalData
+  const calculatedMaxAmount = computed(() => {
+    const amounts = originalData.value.map(item => item.amount)
+    return amounts.length > 0 ? Math.max(...amounts) : null
+  })
+
+  const calculatedMinAmount = computed(() => {
+    const amounts = originalData.value.map(item => item.amount)
+    return amounts.length > 0 ? Math.min(...amounts) : null
+  })
+
+  // Filter the data based on the min and max values
   const filteredData = computed(() => {
-    const min = isNaN(minAmount.value) ? 0 : minAmount.value
-    const max = isNaN(maxAmount.value) ? Infinity : maxAmount.value
+    const min = minAmount.value ?? calculatedMinAmount.value ?? 0
+    const max = maxAmount.value ?? calculatedMaxAmount.value ?? Infinity
     return originalData.value.filter(d => d.amount >= min && d.amount <= max)
   })
 
-  // Draw the chart with zoom and pan functionality on both x-axis and y-axis
   const drawChart = () => {
+    const svgElement = d3.select<SVGSVGElement, unknown>('svg')
+    const svgContainer = svgElement.node()?.parentNode as HTMLElement
+    const containerWidth = svgContainer?.clientWidth || 800
+    const containerHeight = Math.min(svgContainer?.clientHeight || 500, window.innerHeight * 0.75) // Limit height to 75% of viewport height
+
     const data = filteredData.value
     filteredX.value = data.length
 
     if (data.length === 0) return
 
-    // Parse the dates
     const parseTime = d3.timeParse('%Y-%m-%d')
-
-    // Create scales
     const x = d3.scaleTime()
       .domain(d3.extent(data, d => parseTime(d.date) as Date) as [Date, Date])
-      .range([0, width])
+      .range([0, containerWidth - 80])
 
     const y = d3.scaleLinear()
       .domain([0, d3.max(data, d => d.amount) as number])
       .nice()
-      .range([height, 0])
+      .range([containerHeight - 60, 0])
 
-    // Create line generator
     const line = d3.line<{ date: string; amount: number }>()
       .x(d => x(parseTime(d.date) as Date))
       .y(d => y(d.amount))
 
-    // Select and configure the SVG
-    const svg = d3.select<SVGSVGElement, unknown>('svg')
-      .attr('width', width)
-      .attr('height', height)
+    svgElement
+      .attr('width', containerWidth)
+      .attr('height', containerHeight)
 
-    // Clear previous content
-    svg.selectAll('*').remove()
+    svgElement.selectAll('*').remove()
 
-    // Create a group for the chart elements
-    const g = svg.append('g')
-      .attr('transform', `translate(50,20)`)
+    const g = svgElement.append('g')
+      .attr('transform', `translate(40,20)`)
 
-    // Add x-axis with month and year format
     const xAxis = g.append('g')
-      .attr('transform', `translate(0,${height - 40})`)
+      .attr('transform', `translate(0,${containerHeight - 60})`)
       .call(d3.axisBottom(x).tickFormat(d => d3.timeFormat('%b-%y')(d as Date)))
 
-    // Add y-axis
     const yAxis = g.append('g')
       .call(d3.axisLeft(y))
 
-    // Add the line path
     const path = g.append('path')
       .datum(data)
       .attr('fill', 'none')
@@ -117,44 +123,32 @@
       .attr('stroke-width', 1.5)
       .attr('d', line)
 
-    // Define zoom behavior
     const zoom = d3.zoom<SVGSVGElement, unknown>()
-      .scaleExtent([1, 10]) // Define the zoom scale range
-      .translateExtent([[0, 0], [width, height]]) // Define the translate boundaries
-      .extent([[0, 0], [width, height]])
+      .scaleExtent([1, 10])
+      .translateExtent([[0, 0], [containerWidth, containerHeight]])
+      .extent([[0, 0], [containerWidth, containerHeight]])
       .on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-        // Rescale x and y axes
         const newX = event.transform.rescaleX(x)
         const newY = event.transform.rescaleY(y)
 
-        // Update axes
         xAxis.call(d3.axisBottom(newX).tickFormat(d => d3.timeFormat('%b-%y')(d as Date)))
         yAxis.call(d3.axisLeft(newY))
 
-        // Update line path
         path.attr('d', line.x(d => newX(parseTime(d.date) as Date))
           .y(d => newY(d.amount)))
       })
 
-    // Apply zoom to SVG
-    svg.call(zoom as unknown as d3.ZoomBehavior<SVGSVGElement, unknown>)
+    svgElement.call(zoom as unknown as d3.ZoomBehavior<SVGSVGElement, unknown>)
   }
 
-  // Update chart when filter is applied
-  const updateChart = () => {
-    drawChart()
-  }
-
-  // Automatically update the chart when minAmount or maxAmount changes
+  // Watch for changes in minAmount and maxAmount and update the chart accordingly
   watch([minAmount, maxAmount], () => {
-    updateChart()
+    drawChart()
   })
 
-  // Fetch data and draw the chart initially
   onMounted(async () => {
     try {
       const data = await EnergyServices.getDailyData()
-
       if (data && typeof data === 'object' && 'Time Series (Daily)' in data) {
         const timeSeriesData = data['Time Series (Daily)'] as TimeSeriesDaily
         const filteredDataPoints = Object.values(timeSeriesData).map(entry =>
@@ -168,6 +162,10 @@
         }))
         counted.value = originalData.value.length
 
+        // Initialize minAmount and maxAmount with computed values
+        minAmount.value = calculatedMinAmount.value
+        maxAmount.value = calculatedMaxAmount.value
+
         drawChart()
       } else {
         console.error('No valid data found.')
@@ -179,21 +177,96 @@
 </script>
 
 <style scoped>
-v-container {
-  background-color: teal;
-  color: white; /* Optional: ensure text is readable on teal background */
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden; /* Prevent scrollbars if content overflows */
+.header-container h2 {
+  text-align: center;
+  font-size: small;
+  text-transform: uppercase;
 }
 
-v-card {
-  margin-top: 20px;
+.filter-row {
+  margin-bottom: 1em;
+  overflow: visible;
+  flex-direction: row;
+  width: 100%;
+  max-height: 15vh;
+  background: green;
+}
+.chart-card {
+  margin: 0;
+  padding: 0;
+  flex-grow: 1;
 }
 
 svg {
-  border: 1px solid #ccc;
-  height: 100%;
+  border: 3px solid green;
   width: 100%;
+  min-height: 60vh;
+  max-height: 90vh;
+  height: auto;
+  display: block;
+  margin: auto;
+  padding: 0;
+}
+
+.responsive-text-field {
+  width: 100%;
+  max-width: 30%;
+}
+
+@media (max-width: 600px) {
+  .filter-row {
+    flex-direction: row;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5em;
+  }
+
+  .responsive-text-field {
+    margin-bottom: 1em;
+  }
+
+  .responsive-btn {
+    width: 100%;
+  }
+}
+
+@media (min-width: 600px) {
+  .filter-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5em;
+  }
+
+  .responsive-text-field {
+    max-width: 100%;
+    background: pink;
+  }
+}
+
+@media (min-width: 960px) {
+  .filter-row {
+    flex-direction: row;
+  }
+
+  .responsive-text-field {
+    max-width: 100%;
+    background: pink;
+  }
+  .chart-card {
+  margin: 0;
+  padding: 0;
+  flex-grow: 1;
+}
+  .responsive-btn {
+    width: auto;
+    max-width: 400px;
+  }
+
+  svg {
+    border: 3px solid green;
+    width: 100%;
+    max-height: 90vh;
+    height: auto;
+  }
 }
 </style>

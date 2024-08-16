@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <div class="header-container">
-      <h2>Balance: Maximum vs Minimum datapoints: {{ filteredX }} / {{ counted }}</h2>
+      <h2>Daily records of complete datapoints: {{ filteredX }} / {{ counted }}</h2>
     </div>
 
     <v-row align="center" class="filter-row" justify="space-evenly" no-gutters>
@@ -175,14 +175,15 @@
     }
   })
 </script>
-
 <style scoped>
+
 .header-container h2 {
   text-align: center;
   font-size: small;
   text-transform: uppercase;
 }
 
+/* General styles */
 .filter-row {
   margin-bottom: 1em;
   overflow: visible;
@@ -191,6 +192,7 @@
   max-height: 15vh;
   background: green;
 }
+
 .chart-card {
   margin: 0;
   padding: 0;
@@ -204,25 +206,20 @@ svg {
   max-height: 90vh;
   height: auto;
   display: block;
-  width: 100%;
-  max-width: 100vh;
-  max-width: 100vh;
-  background: blue;
-  font-size: small;
-  text-transform: uppercase;
-  display: block;
   margin: auto;
   padding: 0;
 }
 
 .responsive-text-field {
   width: 100%;
-  max-width: 30%;
 }
 
+/* Mobile styles */
 @media (max-width: 600px) {
   .filter-row {
-    flex-direction: row;
+    flex-direction: column; /* Changed to column for better stacking */
+    flex-wrap: wrap;
+    gap: 0.5em;
   }
 
   .responsive-text-field {
@@ -234,44 +231,47 @@ svg {
   }
 }
 
-@media (min-width: 600px) {
+/* Tablet and small desktop styles */
+@media (min-width: 600px) and (max-width: 960px) {
   .filter-row {
     flex-direction: row;
-    flex-wrap: wrap;
-    display: flex;
-    flex-direction: row;
-    gap: 1em;
+    gap: 0.5em;
   }
 
   .responsive-text-field {
-    max-width: 100%;
+    max-width: 30%; /* Use percentage to allow flexibility */
     background: pink;
   }
 }
 
+/* Large desktop styles */
 @media (min-width: 960px) {
   .filter-row {
     flex-direction: row;
   }
 
   .responsive-text-field {
-    max-width: 100%;
+    max-width: 30%;
     background: pink;
   }
 
-  svg {
-    border: 6px solid blueviolet;
-    width: 100%;
-    max-height: 90vh;
-    height: auto;
-    display: block;
-    margin: auto;
-    padding: auto;
+  .chart-card {
+    margin: 0;
+    padding: 0;
+    flex-grow: 1;
   }
 
   .responsive-btn {
     width: auto;
     max-width: 400px;
   }
+
+  svg {
+    border: 3px solid green;
+    width: 100%;
+    max-height: 90vh;
+    height: auto;
+  }
 }
+
 </style>
