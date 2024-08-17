@@ -7,6 +7,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    copy: typeof import('./components/DataXArea copy.vue')['default']
     DataDaily: typeof import('./components/DataDaily.vue')['default']
     DataMonthly: typeof import('./components/DataMonthly.vue')['default']
     DataWeekly: typeof import('./components/DataWeekly.vue')['default']

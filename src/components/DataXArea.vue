@@ -1,26 +1,32 @@
 <template>
   <v-container>
     <div class="header-container">
-      <h2>Min-Max Area of complete datapoints vs 2024: {{ filteredX }} / {{ counted }}</h2>
+      <h2>
+        Comparison of Min-Max Price Ranges vs 2024 Price Data:
+        {{ filteredX }} Filtered Points / {{ counted }} Total Points
+      </h2>
     </div>
+
     <v-row align="center" class="filter-row" justify="space-evenly" no-gutters>
       <v-col cols="12" sm="4">
         <v-text-field
           v-model.number="minAmount"
-          aria-label="Minimum Price"
+          aria-label="Set Minimum Price"
           class="responsive-text-field"
-          label="Minimum Price"
+          label="Set Minimum Price"
           placeholder="Enter minimum price"
+          prepend-icon="mdi-currency-eur"
           type="number"
         />
       </v-col>
       <v-col cols="12" sm="4">
         <v-text-field
           v-model.number="maxAmount"
-          aria-label="Maximum Price"
+          aria-label="Set Maximum Price"
           class="responsive-text-field"
-          label="Maximum Price"
+          label="Set Maximum Price"
           placeholder="Enter maximum price"
+          prepend-icon="mdi-currency-eur"
           type="number"
         />
       </v-col>
@@ -28,7 +34,7 @@
 
     <v-card class="chart-card">
       <v-card-text>
-        <svg ref="chart" aria-label="Line Chart" role="img" />
+        <svg ref="chart" aria-label="Interactive Price Line Chart" role="img" />
       </v-card-text>
     </v-card>
   </v-container>
@@ -116,44 +122,86 @@
     const yAxis = g.append('g')
       .call(d3.axisLeft(y))
 
-    g.append('path')
+    const areaPath = g.append('path')
       .datum(currentYearDataPoints)
       .attr('class', 'area-plot')
-      .attr('fill', 'yellow')
+      .attr('fill', 'teal')
       .attr('stroke', 'none')
       .attr('d', area)
 
-    g.append('path')
+    const linePath = g.append('path')
       .datum(currentYearDataPoints)
       .attr('class', 'line-plot')
       .attr('fill', 'none')
       .attr('stroke', 'red')
-      .attr('stroke-width', 1.5)
+      .attr('stroke-width', 2.5)
+      .attr('stroke-linecap', 'round')
+      .attr('aria-label', 'Data Line Plot')
       .attr('d', line)
+
+    const tooltip = d3.select('body') // Attach the tooltip to the body instead of the SVG container
+      .append('div')
+      .attr('class', 'tooltip')
+      .style('position', 'absolute')
+      .style('visibility', 'hidden')
+      .style('background', '#fff')
+      .style('border', '1px solid #ccc')
+      .style('padding', '5px')
+      .style('border-radius', '5px')
+      .style('font-size', '12px')
+      .style('pointer-events', 'none') // Prevents tooltip from interfering with mouse events
+
+    g.selectAll('circle')
+      .data(currentYearDataPoints)
+      .enter()
+      .append('circle')
+      .attr('r', 4)
+      .attr('cx', d => x(parseDate(getDayMonth(d.date)) as Date))
+      .attr('cy', d => y(d.price))
+      .attr('fill', 'red')
+      .on('mouseover', function (event, d) {
+        d3.select(this).transition().duration(200).attr('r', 6).attr('fill', 'orange') // Highlight on hover
+        tooltip.style('visibility', 'visible')
+          .html(`
+          <strong>Date:</strong> ${d.date}<br>
+          <strong>Price:</strong> $${d.price}<br>
+          <strong>Min:</strong> $${d.min}<br>
+          <strong>Max:</strong> $${d.max}
+        `)
+      })
+      .on('mousemove', function (event) {
+        const [tooltipWidth, tooltipHeight] = [tooltip.node()?.clientWidth || 0, tooltip.node()?.clientHeight || 0]
+        const xPos = event.pageX + 10 + tooltipWidth > window.innerWidth
+          ? event.pageX - tooltipWidth - 10
+          : event.pageX + 10
+        const yPos = event.pageY + 10 + tooltipHeight > window.innerHeight
+          ? event.pageY - tooltipHeight - 10
+          : event.pageY + 10
+        tooltip.style('top', `${yPos}px`).style('left', `${xPos}px`)
+      })
+      .on('mouseout', function () {
+        d3.select(this).transition().duration(200).attr('r', 4).attr('fill', 'red') // Revert circle style
+        tooltip.style('visibility', 'hidden')
+      })
 
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([1, 10])
       .translateExtent([[0, 0], [containerWidth, containerHeight]])
       .extent([[0, 0], [containerWidth, containerHeight]])
       .on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-        const newX = event.transform.rescaleX(x)
-        const newY = event.transform.rescaleY(y)
+        const transform = event.transform
+        const newX = transform.rescaleX(x)
+        const newY = transform.rescaleY(y)
 
         xAxis.call(d3.axisBottom(newX).tickFormat(d => formatDate(d as Date)))
         yAxis.call(d3.axisLeft(newY))
 
-        g.selectAll('path')
-          .attr('d', function (d) {
-            const element = this as HTMLElement // Explicitly cast 'this' to HTMLElement
-            if (element.classList.contains('line-plot')) {
-              return line.x(d => newX(parseDate(getDayMonth(d.date)) as Date))
-                .y(d => newY(d.price))(d as any)
-            } else {
-              return area.x(d => newX(parseDate(getDayMonth(d.date)) as Date))
-                .y0(d => newY(d.min ?? 0))
-                .y1(d => newY(d.max ?? 0))(d as any)
-            }
-          })
+        linePath.attr('d', line.x(d => newX(parseDate(getDayMonth(d.date)) as Date)).y(d => newY(d.price)))
+        areaPath.attr('d', area.x(d => newX(parseDate(getDayMonth(d.date)) as Date)).y0(d => newY(d.min ?? 0)).y1(d => newY(d.max ?? 0)))
+
+        g.selectAll('circle')
+          .attr('cx', d => newX(parseDate(getDayMonth((d as DataPoint).date)) as Date))
+          .attr('cy', d => newY((d as DataPoint).price))
       })
 
     svgElement.call(zoom)
@@ -168,12 +216,8 @@
       const data = await EnergyServices.getDailyData()
       if (data && typeof data === 'object' && 'Time Series (Daily)' in data) {
         const timeSeriesData = data['Time Series (Daily)'] as TimeSeriesDaily
-        counted.value = originalData.value.length
-        minAmount.value = calculatedMinAmount.value
-        maxAmount.value = calculatedMaxAmount.value
         const processedData = processEnergyData(timeSeriesData)
         originalData.value = processedData
-        console.log(originalData.value[0])
         counted.value = originalData.value.length
         minAmount.value = calculatedMinAmount.value
         maxAmount.value = calculatedMaxAmount.value
@@ -227,11 +271,9 @@
       return { date, ...minMax }
     })
   }
-
 </script>
 
 <style scoped>
-
 .header-container h2 {
   text-align: center;
   font-size: small;
