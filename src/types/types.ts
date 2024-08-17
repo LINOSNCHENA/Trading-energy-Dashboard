@@ -1,8 +1,3 @@
-export interface OriginalData {
-    date: string;
-    amount: any;
-  }
-
 export interface TimeSeriesDaily {
     [key: string]: {
       '1. open': string;
@@ -13,12 +8,20 @@ export interface TimeSeriesDaily {
     };
   }
 
-// Define the interface for the min/max map
 export interface IminMaxMap {
   [key: string]: {
     min: number;
     max: number;
     current: number;
+    price: number;
     difference: number;
   };
+}
+
+export interface DataPoint {
+  date: string;
+  price: number;
+  min?: number;
+  max?: number;
+  current: number;
 }

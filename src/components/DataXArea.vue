@@ -3,7 +3,6 @@
     <div class="header-container">
       <h2>Min-Max Area of complete datapoints vs 2024: {{ filteredX }} / {{ counted }}</h2>
     </div>
-
     <v-row align="center" class="filter-row" justify="space-evenly" no-gutters>
       <v-col cols="12" sm="4">
         <v-text-field
@@ -39,37 +38,27 @@
   import { computed, onMounted, ref, watch } from 'vue'
   import * as d3 from 'd3'
   import EnergyServices from '@/services/EnergyServices'
-  import { IminMaxMap, TimeSeriesDaily } from '@/types/types'
+  import { DataPoint, IminMaxMap, TimeSeriesDaily } from '@/types/types'
 
-  // Define types for the data
-  interface DataPoint {
-    date: string;
-    amount: number;
-    min?: number;
-    max?: number;
-  }
-
-  // Reactive variables
   const minAmount = ref<number | null>(null)
   const maxAmount = ref<number | null>(null)
   const counted = ref<number>(0)
   const filteredX = ref<number>(0)
   const originalData = ref<DataPoint[]>([])
 
-  // Computed properties for filtered data and min/max values
   const filteredData = computed(() => {
     const min = minAmount.value ?? 0
     const max = maxAmount.value ?? Infinity
-    return originalData.value.filter(d => d.amount >= min && d.amount <= max)
+    return originalData.value.filter(d => d.price >= min && d.price <= max)
   })
 
   const calculatedMaxAmount = computed(() => {
-    const amounts = originalData.value.map(d => d.amount)
+    const amounts = originalData.value.map(d => d.price)
     return amounts.length > 0 ? Math.max(...amounts) : null
   })
 
   const calculatedMinAmount = computed(() => {
-    const amounts = originalData.value.map(d => d.amount)
+    const amounts = originalData.value.map(d => d.price)
     return amounts.length > 0 ? Math.min(...amounts) : null
   })
 
@@ -87,9 +76,7 @@
     const containerHeight = Math.min(svgContainer?.clientHeight || 11500, window.innerHeight * 1.75)
 
     const currentYearDataPoints = filteredData.value
-
     if (currentYearDataPoints.length === 0) return
-
     filteredX.value = currentYearDataPoints.length
 
     const parseDate = d3.timeParse('%m-%d')
@@ -100,13 +87,13 @@
       .range([0, containerWidth - 80])
 
     const y = d3.scaleLinear()
-      .domain([0, d3.max(currentYearDataPoints, d => d.amount) as number])
+      .domain([0, d3.max(currentYearDataPoints, d => d.price) as number])
       .nice()
       .range([containerHeight - 60, 0])
 
     const line = d3.line<DataPoint>()
       .x(d => x(parseDate(getDayMonth(d.date)) as Date))
-      .y(d => y(d.amount))
+      .y(d => y(d.price))
 
     const area = d3.area<DataPoint>()
       .x(d => x(parseDate(getDayMonth(d.date)) as Date))
@@ -129,7 +116,6 @@
     const yAxis = g.append('g')
       .call(d3.axisLeft(y))
 
-    // Draw the area plot
     g.append('path')
       .datum(currentYearDataPoints)
       .attr('class', 'area-plot')
@@ -137,7 +123,6 @@
       .attr('stroke', 'none')
       .attr('d', area)
 
-    // Draw the line plot
     g.append('path')
       .datum(currentYearDataPoints)
       .attr('class', 'line-plot')
@@ -162,7 +147,7 @@
             const element = this as HTMLElement // Explicitly cast 'this' to HTMLElement
             if (element.classList.contains('line-plot')) {
               return line.x(d => newX(parseDate(getDayMonth(d.date)) as Date))
-                .y(d => newY(d.amount))(d as any)
+                .y(d => newY(d.price))(d as any)
             } else {
               return area.x(d => newX(parseDate(getDayMonth(d.date)) as Date))
                 .y0(d => newY(d.min ?? 0))
@@ -213,14 +198,18 @@
     const currentYearData: DataPoint[] = []
 
     Object.entries(data).forEach(([date, { '4. close': close }]) => {
-      const amount = parseFloat(close)
+      const price = parseFloat(close)
       const monthDay = getMonthDay(date)
       if (!monthlyGroups[monthDay]) {
         monthlyGroups[monthDay] = []
       }
-      monthlyGroups[monthDay].push(amount)
+      monthlyGroups[monthDay].push(price)
       if (new Date(date).getFullYear() === new Date().getFullYear()) {
-        currentYearData.push({ date, amount })
+        currentYearData.push({
+          date,
+          price,
+          current: 0,
+        })
       }
     })
 
@@ -228,20 +217,21 @@
       const minValue = Math.min(...values)
       const maxValue = Math.max(...values)
       const difValue = Number((maxValue - minValue).toFixed(2))
-      map[monthDay] = { min: minValue, max: maxValue, current: 2024, difference: difValue }
+      map[monthDay] = { min: minValue, max: maxValue, current: 2024, difference: difValue, price: difValue }
       return map
     }, {} as IminMaxMap)
-    console.log(minMaxMapResult)
 
-    return currentYearData.map(({ date, amount }) => {
+    return currentYearData.map(({ date }) => {
       const monthDay = getMonthDay(date)
       const minMax = minMaxMapResult[monthDay] || { min: null, max: null, current: null, difference: null }
-      return { date, amount, ...minMax }
+      return { date, ...minMax }
     })
   }
+
 </script>
 
 <style scoped>
+
 .header-container h2 {
   text-align: center;
   font-size: small;

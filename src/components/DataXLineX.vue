@@ -81,7 +81,6 @@
     const svgContainer = svgElement.node()?.parentNode as HTMLElement
     const containerWidth = svgContainer?.clientWidth || 800
     const containerHeight = Math.min(svgContainer?.clientHeight || 500, window.innerHeight * 0.75)
-
     const allData = filteredData.value
     const currentYearDataPoints = calculateCurrentYearData(allData)
 
@@ -121,7 +120,6 @@
     const yAxis = g.append('g')
       .call(d3.axisLeft(y))
 
-    // Draw the line plot
     g.append('path')
       .datum(currentYearDataPoints)
       .attr('fill', 'none')
@@ -168,7 +166,6 @@
           date,
           amount: filteredDataPoints[index],
         }))
-
         counted.value = originalData.value.length
         minAmount.value = calculatedMinAmount.value
         maxAmount.value = calculatedMaxAmount.value
@@ -195,8 +192,7 @@
   overflow: visible;
   flex-direction: row;
   width: 100%;
-  max-height: 15vh;
-  background: green;
+  max-height: 10vh;
 }
 
 .chart-card {
@@ -219,6 +215,10 @@ svg {
 .responsive-text-field {
   width: 100%;
 }
+
+.center-text {
+        text-align: center;
+    }
 
 @media (max-width: 600px) {
   .filter-row {
