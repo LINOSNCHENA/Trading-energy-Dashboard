@@ -41,6 +41,7 @@
 </template>
 
 <script setup lang="ts">
+
   import { computed, onMounted, ref, watch } from 'vue'
   import * as d3 from 'd3'
   import EnergyServices from '@/services/EnergyServices'
@@ -115,13 +116,6 @@
     const g = svgElement.append('g')
       .attr('transform', `translate(40,20)`)
 
-    const xAxis = g.append('g')
-      .attr('transform', `translate(0,${containerHeight - 60})`)
-      .call(d3.axisBottom(x).tickFormat(d => formatDate(d as Date)))
-
-    const yAxis = g.append('g')
-      .call(d3.axisLeft(y))
-
     const areaPath = g.append('path')
       .datum(currentYearDataPoints)
       .attr('class', 'area-plot')
@@ -184,9 +178,19 @@
         tooltip.style('visibility', 'hidden')
       })
 
+    // Add the axes last so they stay on top
+    const xAxis = g.append('g')
+      .attr('transform', `translate(0,${containerHeight - 60})`)
+      .call(d3.axisBottom(x).tickFormat(d => formatDate(d as Date)))
+
+    const yAxis = g.append('g')
+      .call(d3.axisLeft(y))
+
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([1, 10])
       .translateExtent([[0, 0], [containerWidth, containerHeight]])
+      .extent([[0, 0], [containerWidth, containerHeight]])
+      .translateExtent([[Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY], [Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY]])
       .extent([[0, 0], [containerWidth, containerHeight]])
       .on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
         const transform = event.transform

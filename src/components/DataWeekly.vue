@@ -35,6 +35,7 @@
 </template>
 
 <script setup lang="ts">
+
   import { computed, onMounted, ref, watch } from 'vue'
   import * as d3 from 'd3'
   import EnergyServices from '@/services/EnergyServices'
