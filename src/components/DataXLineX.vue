@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <div class="header-container">
-      <h2>Min-Max Area(1) records of complete datapoints: {{ filteredX }} / {{ counted }}</h2>
+      <h2>Line of Maximum  of complete datapoints: {{ filteredX }} / {{ counted }}</h2>
     </div>
 
     <v-row align="center" class="filter-row" justify="space-evenly" no-gutters>
@@ -29,13 +29,14 @@
 
     <v-card class="chart-card">
       <v-card-text>
-        <svg ref="chart" aria-label="Line and Area Chart" />
+        <svg ref="chart" aria-label="Line Chart" />
       </v-card-text>
     </v-card>
   </v-container>
 </template>
 
 <script setup lang="ts">
+
   import { computed, onMounted, ref, watch } from 'vue'
   import * as d3 from 'd3'
   import EnergyServices from '@/services/EnergyServices'
@@ -54,31 +55,21 @@
     return originalData.value.filter(d => d.amount >= min && d.amount <= max)
   })
 
+  const calculatedMaxAmount = computed(() => {
+    const amounts = originalData.value.map(item => item.amount)
+    return amounts.length > 0 ? Math.max(...amounts) : null
+  })
+
+  const calculatedMinAmount = computed(() => {
+    const amounts = originalData.value.map(item => item.amount)
+    return amounts.length > 0 ? Math.min(...amounts) : null
+  })
+
   function getDayMonth (date: string): string {
     const currentDate = new Date(date)
     const day = String(currentDate.getDate()).padStart(2, '0')
     const month = String(currentDate.getMonth() + 1).padStart(2, '0')
     return `${month}-${day}`
-  }
-
-  function calculateMinMaxRange (data: { date: string; amount: number }[]): { date: string; min: number; max: number }[] {
-    const dayStats: Record<string, { min: number; max: number }> = {}
-
-    for (const entry of data) {
-      const dayMonth = getDayMonth(entry.date)
-      if (!dayStats[dayMonth]) {
-        dayStats[dayMonth] = { min: entry.amount, max: entry.amount }
-      } else {
-        dayStats[dayMonth].min = Math.min(dayStats[dayMonth].min, entry.amount)
-        dayStats[dayMonth].max = Math.max(dayStats[dayMonth].max, entry.amount)
-      }
-    }
-
-    return Object.keys(dayStats).map(dayMonth => ({
-      date: dayMonth,
-      min: dayStats[dayMonth].min,
-      max: dayStats[dayMonth].max,
-    }))
   }
 
   function calculateCurrentYearData (data: { date: string; amount: number }[]): { date: string; amount: number }[] {
@@ -92,30 +83,26 @@
     const containerHeight = Math.min(svgContainer?.clientHeight || 500, window.innerHeight * 0.75)
 
     const allData = filteredData.value
-    const minMaxRange = calculateMinMaxRange(allData)
     const currentYearDataPoints = calculateCurrentYearData(allData)
 
-    if (minMaxRange.length === 0 && currentYearDataPoints.length === 0) return
+    if (currentYearDataPoints.length === 0) return
+
+    filteredX.value = currentYearDataPoints.length
 
     const parseDate = d3.timeParse('%m-%d')
     const formatDate = d3.timeFormat('%b-%d')
 
     const x = d3.scaleTime()
-      .domain(d3.extent(minMaxRange, d => parseDate(d.date) as Date) as [Date, Date])
+      .domain(d3.extent(currentYearDataPoints, d => parseDate(getDayMonth(d.date)) as Date) as [Date, Date])
       .range([0, containerWidth - 80])
 
     const y = d3.scaleLinear()
-      .domain([0, d3.max(minMaxRange, d => d.max) as number])
+      .domain([0, d3.max(currentYearDataPoints, d => d.amount) as number])
       .nice()
       .range([containerHeight - 60, 0])
 
-    const area = d3.area<{ date: string; min: number; max: number }>()
-      .x(d => x(parseDate(d.date) as Date))
-      .y0(d => y(d.min))
-      .y1(d => y(d.max))
-
     const line = d3.line<{ date: string; amount: number }>()
-      .x(d => x(parseDate(d.date) as Date))
+      .x(d => x(parseDate(getDayMonth(d.date)) as Date))
       .y(d => y(d.amount))
 
     svgElement
@@ -134,25 +121,9 @@
     const yAxis = g.append('g')
       .call(d3.axisLeft(y))
 
-    // Draw the area plot
+    // Draw the line plot
     g.append('path')
-      .datum(minMaxRange)
-      .attr('fill', 'lightblue')
-      .attr('opacity', 0.5)
-      .attr('stroke', 'none')
-      .attr('d', area)
-
-    function createNewObjectsFromProxies (x: any[]) {
-      return x.map((proxy: any) => ({
-        ...proxy, // Spread the existing properties
-      // You can add or modify properties here if needed
-      }))
-    }
-
-    const currentYearDataPoint = createNewObjectsFromProxies(currentYearDataPoints)
-
-    g.append('path')
-      .datum(currentYearDataPoint)
+      .datum(currentYearDataPoints)
       .attr('fill', 'none')
       .attr('stroke', 'red')
       .attr('stroke-width', 1.5)
@@ -170,14 +141,9 @@
         yAxis.call(d3.axisLeft(newY))
 
         g.selectAll('path')
-          .attr('d', (d, i, nodes) => {
-            const type = d3.select(nodes[i]).attr('stroke') ? 'line' : 'area'
-            return type === 'line'
-              ? line.x(d => newX(parseDate(d.date) as Date))
-                .y(d => newY(d.amount))(d as any)
-              : area.x(d => newX(parseDate(d.date) as Date))
-                .y0(d => newY(d.min))
-                .y1(d => newY(d.max))(d as any)
+          .attr('d', d => {
+            return line.x(d => newX(parseDate(getDayMonth(d.date)) as Date))
+              .y(d => newY(d.amount))(d as any)
           })
       })
 
@@ -203,6 +169,10 @@
           amount: filteredDataPoints[index],
         }))
 
+        counted.value = originalData.value.length
+        minAmount.value = calculatedMinAmount.value
+        maxAmount.value = calculatedMaxAmount.value
+
         drawChart()
       } else {
         console.error('No valid data found.')
@@ -226,7 +196,7 @@
   flex-direction: row;
   width: 100%;
   max-height: 15vh;
-
+  background: green;
 }
 
 .chart-card {
@@ -236,6 +206,7 @@
 }
 
 svg {
+  border: 3px solid green;
   width: 100%;
   min-height: 60vh;
   max-height: 90vh;

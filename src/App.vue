@@ -18,8 +18,8 @@
           <li><a href="#/daily">1. Daily Summary</a></li>
           <li><a href="#/weekly">2. Weekly Overview</a></li>
           <li><a href="#/monthly">3. Monthly Trends</a></li>
-          <li><a href="#/minimum">4. Minimum Price Trends</a></li>
-          <li><a href="#/area">5. Area Analysis</a></li>
+          <li><a href="#/area">4. Area Analysis</a></li>
+          <li><a href="#/minimum">5. Area Lines</a></li>
         </ul>
       </nav>
       <img
@@ -43,8 +43,8 @@
   import TradeDaily from '@/components/DataDaily.vue'
   import TradeWeekly from './components/DataWeekly.vue'
   import TradeMonthly from './components/DataMonthly.vue'
-  import TradeArea from './components/DataMaximum.vue'
-  import TradeMinimum from './components/DataMinimum.vue'
+  import TradeArea from './components/DataXArea.vue'
+  import TradeMinimum from './components/DataXLineX.vue'
   import { useAuthStore } from './stores/AppsAuth'
   const storeAUT = useAuthStore()
   const loginUser = ref()

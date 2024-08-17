@@ -3,11 +3,6 @@ export interface OriginalData {
     amount: any;
   }
 
-export interface ExtractedData {
-    date: string;
-    amount: number;
-  }
-
 export interface TimeSeriesDaily {
     [key: string]: {
       '1. open': string;
@@ -17,3 +12,13 @@ export interface TimeSeriesDaily {
       '5. volume': string;
     };
   }
+
+// Define the interface for the min/max map
+export interface IminMaxMap {
+  [key: string]: {
+    min: number;
+    max: number;
+    current: number;
+    difference: number;
+  };
+}

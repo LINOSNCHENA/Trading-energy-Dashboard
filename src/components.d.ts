@@ -7,14 +7,11 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    copy: typeof import('./components/DataMaximum copy.vue')['default']
-    DataBalance: typeof import('./components/DataBalance.vue')['default']
     DataDaily: typeof import('./components/DataDaily.vue')['default']
-    DataMaximum: typeof import('./components/DataMaximum.vue')['default']
-    DataMinimum: typeof import('./components/DataMinimum.vue')['default']
     DataMonthly: typeof import('./components/DataMonthly.vue')['default']
     DataWeekly: typeof import('./components/DataWeekly.vue')['default']
-    DataWhole: typeof import('./components/DataWhole.vue')['default']
+    DataXArea: typeof import('./components/DataXArea.vue')['default']
+    DataXLineX: typeof import('./components/DataXLineX.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }
