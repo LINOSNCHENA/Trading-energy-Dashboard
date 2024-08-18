@@ -40,28 +40,28 @@
   import { computed, onMounted, ref, watch } from 'vue'
   import * as d3 from 'd3'
   import EnergyServices from '@/services/EnergyServices'
-  import { TimeSeriesDaily } from '@/types/types'
+  import { IDataPoint, ITimeSeriesDaily } from '@/types/types'
 
   const minAmount = ref<number | null>(null)
   const maxAmount = ref<number | null>(null)
   const counted = ref(0)
   const filteredX = ref(0)
-  const originalData = ref<{ date: string; amount: number }[]>([])
+  const originalData = ref<IDataPoint[]>([])
   const currentYear = new Date().getFullYear()
 
   const filteredData = computed(() => {
     const min = minAmount.value ?? 0
     const max = maxAmount.value ?? Infinity
-    return originalData.value.filter(d => d.amount >= min && d.amount <= max)
+    return originalData.value.filter(d => d.price >= min && d.price <= max)
   })
 
   const calculatedMaxAmount = computed(() => {
-    const amounts = originalData.value.map(item => item.amount)
+    const amounts = originalData.value.map(item => item.price)
     return amounts.length > 0 ? Math.max(...amounts) : null
   })
 
   const calculatedMinAmount = computed(() => {
-    const amounts = originalData.value.map(item => item.amount)
+    const amounts = originalData.value.map(item => item.price)
     return amounts.length > 0 ? Math.min(...amounts) : null
   })
 
@@ -72,7 +72,7 @@
     return `${month}-${day}`
   }
 
-  function calculateCurrentYearData (data: { date: string; amount: number }[]): { date: string; amount: number }[] {
+  function calculateCurrentYearData (data: { date: string; price: number }[]): { date: string; price: number }[] {
     return data.filter(entry => new Date(entry.date).getFullYear() === currentYear)
   }
 
@@ -85,7 +85,6 @@
     const currentYearDataPoints = calculateCurrentYearData(allData)
 
     if (currentYearDataPoints.length === 0) return
-
     filteredX.value = currentYearDataPoints.length
 
     const parseDate = d3.timeParse('%m-%d')
@@ -96,13 +95,13 @@
       .range([0, containerWidth - 80])
 
     const y = d3.scaleLinear()
-      .domain([0, d3.max(currentYearDataPoints, d => d.amount) as number])
+      .domain([0, d3.max(currentYearDataPoints, d => d.price) as number])
       .nice()
       .range([containerHeight - 60, 0])
 
-    const line = d3.line<{ date: string; amount: number }>()
+    const line = d3.line<{ date: string; price: number }>()
       .x(d => x(parseDate(getDayMonth(d.date)) as Date))
-      .y(d => y(d.amount))
+      .y(d => y(d.price))
 
     svgElement
       .attr('width', containerWidth)
@@ -141,7 +140,7 @@
         g.selectAll('path')
           .attr('d', d => {
             return line.x(d => newX(parseDate(getDayMonth(d.date)) as Date))
-              .y(d => newY(d.amount))(d as any)
+              .y(d => newY(d.price))(d as any)
           })
       })
 
@@ -156,7 +155,7 @@
     try {
       const data = await EnergyServices.getDailyData()
       if (data && typeof data === 'object' && 'Time Series (Daily)' in data) {
-        const timeSeriesData = data['Time Series (Daily)'] as TimeSeriesDaily
+        const timeSeriesData = data['Time Series (Daily)'] as ITimeSeriesDaily
         const filteredDataPoints = Object.values(timeSeriesData).map(entry =>
           parseFloat(entry['4. close'])
         ).reverse()
@@ -164,7 +163,8 @@
 
         originalData.value = labels.map((date, index) => ({
           date,
-          amount: filteredDataPoints[index],
+          price: filteredDataPoints[index],
+          current: 0,
         }))
         counted.value = originalData.value.length
         minAmount.value = calculatedMinAmount.value

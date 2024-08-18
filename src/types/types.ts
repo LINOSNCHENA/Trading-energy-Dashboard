@@ -1,4 +1,4 @@
-export interface TimeSeriesDaily {
+export interface ITimeSeriesDaily {
     [key: string]: {
       '1. open': string;
       '2. high': string;
@@ -8,7 +8,7 @@ export interface TimeSeriesDaily {
     };
   }
 
-export interface IminMaxMap {
+export interface IMinMaxMap {
   [key: string]: {
     min: number;
     max: number;
@@ -18,7 +18,7 @@ export interface IminMaxMap {
   };
 }
 
-export interface DataPoint {
+export interface IDataPoint {
   date: string;
   price: number;
   min?: number;

@@ -45,13 +45,13 @@
   import { computed, onMounted, ref, watch } from 'vue'
   import * as d3 from 'd3'
   import EnergyServices from '@/services/EnergyServices'
-  import { DataPoint, IminMaxMap, TimeSeriesDaily } from '@/types/types'
+  import { IDataPoint, IMinMaxMap, ITimeSeriesDaily } from '@/types/types'
 
   const minAmount = ref<number | null>(null)
   const maxAmount = ref<number | null>(null)
   const counted = ref<number>(0)
   const filteredX = ref<number>(0)
-  const originalData = ref<DataPoint[]>([])
+  const originalData = ref<IDataPoint[]>([])
 
   const filteredData = computed(() => {
     const min = minAmount.value ?? 0
@@ -98,11 +98,11 @@
       .nice()
       .range([containerHeight - 60, 0])
 
-    const line = d3.line<DataPoint>()
+    const line = d3.line<IDataPoint>()
       .x(d => x(parseDate(getDayMonth(d.date)) as Date))
       .y(d => y(d.price))
 
-    const area = d3.area<DataPoint>()
+    const area = d3.area<IDataPoint>()
       .x(d => x(parseDate(getDayMonth(d.date)) as Date))
       .y0(d => y(d.min ?? 0))
       .y1(d => y(d.max ?? 0))
@@ -221,8 +221,8 @@
         linePath.attr('d', line.x(d => newX(parseDate(getDayMonth(d.date)) as Date)).y(d => newY(d.price)))
         areaPath.attr('d', area.x(d => newX(parseDate(getDayMonth(d.date)) as Date)).y0(d => newY(d.min ?? 0)).y1(d => newY(d.max ?? 0)))
         g.selectAll('circle')
-          .attr('cx', d => newX(parseDate(getDayMonth((d as DataPoint).date)) as Date))
-          .attr('cy', d => newY((d as DataPoint).price))
+          .attr('cx', d => newX(parseDate(getDayMonth((d as IDataPoint).date)) as Date))
+          .attr('cy', d => newY((d as IDataPoint).price))
       })
 
     svgElement.call(zoom)
@@ -232,7 +232,7 @@
     try {
       const data = await EnergyServices.getDailyData()
       if (data && typeof data === 'object' && 'Time Series (Daily)' in data) {
-        const timeSeriesData = data['Time Series (Daily)'] as TimeSeriesDaily
+        const timeSeriesData = data['Time Series (Daily)'] as ITimeSeriesDaily
         const processedData = processEnergyData(timeSeriesData)
         originalData.value = processedData
         counted.value = originalData.value.length
@@ -254,9 +254,9 @@
     return `${month}-${day}`
   }
 
-  function processEnergyData (data: { [key: string]: { '4. close': string } }): DataPoint[] {
+  function processEnergyData (data: { [key: string]: { '4. close': string } }): IDataPoint[] {
     const monthlyGroups: { [key: string]: number[] } = {}
-    const currentYearData: DataPoint[] = []
+    const currentYearData: IDataPoint[] = []
 
     Object.entries(data).forEach(([date, { '4. close': close }]) => {
       const price = parseFloat(close)
@@ -280,11 +280,11 @@
       const difValue = Number((maxValue - minValue).toFixed(2))
       map[monthDay] = { min: minValue, max: maxValue, current: 2024, difference: difValue, price: difValue }
       return map
-    }, {} as IminMaxMap)
+    }, {} as IMinMaxMap)
 
     return currentYearData.map(({ date }) => {
       const monthDay = getMonthDay(date)
-      const minMax = minMaxMapResult[monthDay] || { min: null, max: null, current: null, difference: null }
+      const minMax = minMaxMapResult[monthDay] || { min: 0, max: 0, current: 0, price: 0, difference: 0 }
       return { date, ...minMax }
     })
   }
