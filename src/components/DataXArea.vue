@@ -178,13 +178,33 @@
         tooltip.style('visibility', 'hidden')
       })
 
-    // Add the axes last so they stay on top
     const xAxis = g.append('g')
       .attr('transform', `translate(0,${containerHeight - 60})`)
       .call(d3.axisBottom(x).tickFormat(d => formatDate(d as Date)))
 
     const yAxis = g.append('g')
       .call(d3.axisLeft(y))
+
+    // Add X-Axis label (BELOW)
+    svgElement.append('text')
+      .attr('class', 'x-axis-label')
+      .attr('text-anchor', 'middle')
+      .attr('x', containerWidth / 2)
+      .attr('y', containerHeight - 90) // Positioning below the x-axis
+      .attr('font-size', '12px')
+      .attr('fill', '#333')
+      .text('Period and Dates')
+
+    // Add Y-Axis label (LEFT)
+    svgElement.append('text')
+      .attr('class', 'y-axis-label')
+      .attr('text-anchor', 'middle')
+      .attr('x', -containerHeight / 2)
+      .attr('y', 90) // Positioning to the left of the y-axis
+      .attr('font-size', '12px')
+      .attr('fill', '#333')
+      .attr('transform', 'rotate(-90)') // Rotate for vertical text
+      .text('Price (CZK)')
 
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([1, 10])
@@ -196,13 +216,10 @@
         const transform = event.transform
         const newX = transform.rescaleX(x)
         const newY = transform.rescaleY(y)
-
         xAxis.call(d3.axisBottom(newX).tickFormat(d => formatDate(d as Date)))
         yAxis.call(d3.axisLeft(newY))
-
         linePath.attr('d', line.x(d => newX(parseDate(getDayMonth(d.date)) as Date)).y(d => newY(d.price)))
         areaPath.attr('d', area.x(d => newX(parseDate(getDayMonth(d.date)) as Date)).y0(d => newY(d.min ?? 0)).y1(d => newY(d.max ?? 0)))
-
         g.selectAll('circle')
           .attr('cx', d => newX(parseDate(getDayMonth((d as DataPoint).date)) as Date))
           .attr('cy', d => newY((d as DataPoint).price))
@@ -210,10 +227,6 @@
 
     svgElement.call(zoom)
   }
-
-  watch([minAmount, maxAmount], () => {
-    drawChart()
-  })
 
   onMounted(async () => {
     try {
@@ -275,6 +288,10 @@
       return { date, ...minMax }
     })
   }
+
+  watch([minAmount, maxAmount], () => {
+    drawChart()
+  })
 </script>
 
 <style scoped>
@@ -282,29 +299,40 @@
   text-align: center;
   font-size: small;
   text-transform: uppercase;
+  margin: auto;
 }
 
 .filter-row {
   margin-bottom: 1em;
+  margin: auto;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5em;
+  gap: 0.1em;
 }
 
 .chart-card {
   margin: 0;
   padding: 0;
   flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: greenyellow;
+  background: gainsboro;
+  color: black;
+  min-height: 60vh;
+  max-height: 80vh;
 }
 
-svg {
-  border: 3px solid green;
+.chart-card svg {
   width: 100%;
-  min-height: 60vh;
-  max-height: 90vh;
-  height: auto;
+  /* Make SVG fill the width of the card */
+  height: 100%;
+  /* Make SVG fill the height of the card */
   display: block;
-  margin: auto;
+  font-size: small;
+  text-transform: uppercase;
 }
 
 .responsive-text-field {
@@ -325,5 +353,6 @@ svg {
   .filter-row {
     flex-direction: row;
   }
+
 }
 </style>

@@ -3,8 +3,195 @@
  *
  * Configures SASS variables and Vuetify overwrites
  */
+/* Global Variables */
+:root {
+  --bg-color: #f2f4f7;
+  --bg-card-color: #ffffff;
+  --border-radius: 8px;
+  --divider-color: #e9e9f4;
+  --color-primary: #27292f;
+  --color-secondary: #58667e;
+  --color-gray-3: #58667e;
+  --text-sm-2: 12px;
+  --link-hover-bg: #d9d9d9;
+  --link-active-bg: #c0c0c0; /* Background color for active link */
+}
 
-// https://vuetifyjs.com/features/sass-variables/`
-// @use 'vuetify/settings' with (
-//   $color-pack: false
-// );
+/* Base Styles */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  font-family: "Roboto", sans-serif;
+  background: var(--bg-color);
+  color: var(--color-primary);
+}
+
+/* Link Styles */
+a {
+  text-decoration: none;
+  font-size: 1.3rem;
+  color: var(--color-primary);
+  transition: color 0.3s ease, background-color 0.3s ease;
+
+  &:hover,
+  &:focus {
+    color: var(--color-secondary);
+    background-color: var(--link-hover-bg);
+  }
+
+  &:focus {
+    outline: none;
+  }
+  
+  &.active {
+    font-weight: bold;
+    color: var(--color-primary);
+    background-color: var(--link-active-bg);
+    border-radius: var(--border-radius);
+  }
+}
+
+/* Typography */
+h1, h2 {
+  color: var(--color-primary);
+}
+
+h1 {
+  font-size: 2.5rem;
+  line-height: 1.2;
+  text-align: center;
+}
+
+/* Layout */
+.app-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100vh; 
+  height: 100vh; /* Full viewport height */
+  margin: 0 auto;
+  background: var(--bg-card-color);
+}
+
+/* Header */
+header {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 1rem 0;
+  background: var(--bg-card-color);
+  border-bottom: 1px solid var(--divider-color);
+}
+
+/* Navigation */
+nav {
+  position: fixed;
+  right: 0;
+  top: 0;
+  background: white;
+  height: 100vh;
+  width: 100%;
+  z-index: 999;
+  text-transform: uppercase;
+  transform: translateX(100%);
+  transition: transform 0.5s ease-in-out;
+  overflow-y: auto;
+
+  ul {
+    list-style-type: none;
+    padding: 0;
+    margin-top: 6em;
+
+    a {
+      color: var(--color-primary);
+      padding: 0.75em 2em;
+      display: block;
+    }
+
+    a:hover {
+      background: var(--link-hover-bg);
+    }
+  }
+}
+
+/* Mobile Menu */
+.menu {
+  width: 2em;
+  cursor: pointer;
+}
+
+.close {
+  float: right;
+  margin: 2em;
+  width: 2.5em;
+  cursor: pointer;
+}
+
+.opened {
+  transform: translateX(0);
+}
+
+/* Logo */
+.logo {
+  display: flex;
+  align-items: center; /* Vertically centers the content */
+  justify-content: space-between; /* Spreads the logo content evenly */
+  color: var(--color-primary);
+  padding: 0 1rem;
+
+  span {
+    color: var(--color-gray-3);
+    margin-left: 0.5rem; /* Adjust spacing between elements */
+  }
+}
+
+/* Responsive Styles */
+@media (min-width: 680px) {
+  body {
+    margin: 0;
+  }
+}
+
+@media (min-width: 920px) {
+  .menu {
+    display: none;
+  }
+
+  nav {
+    transform: translateX(0);
+    position: static;
+    width: auto;
+    height: auto;
+    background: none;
+
+    ul {
+      display: flex;
+      margin: 0;
+
+      a {
+        color: var(--color-primary);
+        padding: 0.5em 1.5em;
+        font-size: 0.9rem;
+      }
+
+      a:hover {
+        background: none;
+        text-decoration: underline;
+      }
+    }
+
+    .close {
+      display: none;
+    }
+  }
+}
+
+@media (min-width: 1200px) {
+  h1 {
+    font-size: 3rem;
+    margin-top: 2em;
+    line-height: 3.3rem;
+  }
+}
