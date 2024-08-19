@@ -3,7 +3,6 @@
     <div class="header-container">
       <h2>Line of Maximum of complete datapoints: {{ filteredX }} / {{ counted }}</h2>
     </div>
-
     <v-row align="center" class="filter-row" justify="space-evenly" no-gutters>
       <v-col cols="12" sm="4">
         <v-text-field
@@ -164,6 +163,7 @@
           date,
           price: filteredDataPoints[index],
           current: 0,
+          difference: 0,
         }))
         counted.value = originalData.value.length
         minAmount.value = calculatedMinAmount.value
@@ -184,112 +184,60 @@
   text-align: center;
   font-size: small;
   text-transform: uppercase;
+  margin: auto;
 }
 
 .filter-row {
   margin-bottom: 1em;
-  overflow: visible;
-  flex-direction: row;
-  width: 100%;
-  max-height: 10vh;
+  margin: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1em;
 }
 
 .chart-card {
   margin: 0;
   padding: 0;
   flex-grow: 1;
-}
-
-svg {
-  border: 3px solid green;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   width: 100%;
+  background: greenyellow;
+  background: gainsboro;
+  color: black;
   min-height: 60vh;
-  max-height: 90vh;
-  height: auto;
-  display: block;
-  margin: auto;
-  padding: 0;
+  max-height: 80vh;
 }
 
-.custom-data-table {
+.chart-card svg {
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 1em;
-}
-
-.custom-data-table th, .custom-data-table td {
-  border: 1px solid #ccc;
-  padding: 8px;
-  text-align: center;
-}
-
-.custom-data-table th {
-  background-color: #f5f5f5;
-  font-weight: bold;
+  /* Make SVG fill the width of the card */
+  height: 100%;
+  /* Make SVG fill the height of the card */
+  display: block;
+  font-size: small;
+  text-transform: uppercase;
 }
 
 .responsive-text-field {
   width: 100%;
 }
 
-.center-text {
-  text-align: center;
-}
-
 @media (max-width: 600px) {
   .filter-row {
     flex-direction: column;
-    flex-wrap: wrap;
-    gap: 0.5em;
   }
 
   .responsive-text-field {
     margin-bottom: 1em;
   }
-
-  .responsive-btn {
-    width: 100%;
-  }
 }
 
-@media (min-width: 600px) and (max-width: 960px) {
-  .filter-row {
-    flex-direction: row;
-    gap: 0.5em;
-  }
-
-  .responsive-text-field {
-    max-width: 30%;
-    background: pink;
-  }
-}
-
-@media (min-width: 960px) {
+@media (min-width: 600px) {
   .filter-row {
     flex-direction: row;
   }
 
-  .responsive-text-field {
-    max-width: 30%;
-    background: pink;
-  }
-
-  .chart-card {
-    margin: 0;
-    padding: 0;
-    flex-grow: 1;
-  }
-
-  .responsive-btn {
-    width: auto;
-    max-width: 400px;
-  }
-
-  svg {
-    border: 3px solid green;
-    width: 100%;
-    max-height: 90vh;
-    height: auto;
-  }
 }
 </style>

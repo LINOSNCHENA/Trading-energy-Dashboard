@@ -24,4 +24,5 @@ export interface IDataPoint {
   min?: number;
   max?: number;
   current: number;
+  difference: number;
 }

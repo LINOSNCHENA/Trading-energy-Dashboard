@@ -2,31 +2,71 @@
   <v-container>
     <div class="header-container">
       <h2>Data Tables of complete datapoints: {{ filteredX }} / {{ counted }}</h2>
-    </div>    <v-pre> {{ filteredData[0] }}</v-pre>
-    <v-card class="data-table-card">
-      <v-card-title>Filtered Data</v-card-title>
-      <table class="custom-data-table">
-        <thead>
-          <tr>
-            <th>Index</th>
-            <th>Date</th>
-            <th>Price</th>
-            <th>Min Price</th>
-            <th>Max Price</th>
-          </tr>
-        </thead>
+    </div>
+    <!-- Grid layout with two columns -->
+    <v-row>
+      <v-col cols="6">
+        <!-- <v-pre>{{ filteredData[0] }}</v-pre> -->
+        <v-card class="data-table-card">
+          <v-card-title>Filtered Data - Original Table ({{ filteredData.length }})</v-card-title>
+          <table class="custom-data-table">
+            <thead>
+              <tr>
+                <th>Index</th>
+                <th>Date</th>
+                <th>Price</th>
+                <th>Min Price</th>
+                <th>Max Price</th>
+                <th>Global Diff</th>
+                <th>Current</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, index) in sortedFilteredData" :key="item.date">
+                <td>{{ index + 1 }}</td>
+                <td>{{ item.date }}</td>
+                <td>{{ item.price }}</td>
+                <td>{{ calculatedMinAmount }}</td>
+                <td>{{ calculatedMaxAmount }}</td>
+                <td>{{ (calculatedMaxAmount ?? 0) - (calculatedMinAmount ?? 0) }}</td>
+                <td>{{ item.current }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </v-card>
+      </v-col>
 
-        <tbody>
-          <tr v-for="item,index in filteredData" :key="item.date">
-            <td>{{ index+1 }}</td>
-            <td>{{ item.date }}</td>
-            <td>{{ item.price }}</td>
-            <td>{{ calculatedMinAmount }}</td>
-            <td>{{ calculatedMaxAmount }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </v-card>
+      <v-col cols="6">
+        <!-- <v-pre>{{ processedData[0] }}</v-pre> -->
+        <v-card class="data-table-card">
+          <v-card-title>Filtered Data - Process Table ({{ processedData.length }})</v-card-title>
+          <table class="custom-data-table">
+            <thead>
+              <tr>
+                <th>Index</th>
+                <th>Date</th>
+                <th>Price</th>
+                <th>Min Price</th>
+                <th>Max Price</th>
+                <th>Difference</th>
+                <th>Current</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, index) in sortedProcessedData" :key="item.date">
+                <td>{{ index + 1 }}</td>
+                <td>{{ item.date }}</td>
+                <td>{{ item.price }}</td>
+                <td>{{ item.min }}</td>
+                <td>{{ item.max }}</td>
+                <td>{{ item.difference }}</td>
+                <td>{{ item.current }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </v-card>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 
@@ -35,12 +75,14 @@
   import * as d3 from 'd3'
   import EnergyServices from '@/services/EnergyServices'
   import { IDataPoint, ITimeSeriesDaily } from '@/types/types'
+  import { processEnergyData } from '@/utils/dataProcessedDaily'
 
   const minAmount = ref<number | null>(null)
   const maxAmount = ref<number | null>(null)
   const counted = ref(0)
   const filteredX = ref(0)
   const originalData = ref<IDataPoint[]>([])
+  const processedData = ref<IDataPoint[]>([])
   const currentYear = new Date().getFullYear()
 
   const filteredData = computed(() => {
@@ -57,6 +99,18 @@
   const calculatedMinAmount = computed(() => {
     const amounts = originalData.value.map(item => item.price)
     return amounts.length > 0 ? Math.min(...amounts) : null
+  })
+
+  const sortedFilteredData = computed(() => {
+    const first = filteredData.value.slice().sort((b, a) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    console.log(first)
+    return filteredData.value.slice().sort((b, a) => (a.price) - (b.price))
+  })
+
+  const sortedProcessedData = computed(() => {
+    const dated = processedData.value.slice().sort((b, a) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    console.log(dated)
+    return filteredData.value.slice().sort((b, a) => (a.price) - (b.price))
   })
 
   function getDayMonth (date: string): string {
@@ -158,12 +212,14 @@
         originalData.value = labels.map((date, index) => ({
           date,
           price: filteredDataPoints[index],
-          current: 0,
+          current: filteredDataPoints[index],
+          difference: maxAmount.value || 0,
         }))
-        counted.value = originalData.value.length
-        minAmount.value = calculatedMinAmount.value
-        maxAmount.value = calculatedMaxAmount.value
 
+        const processData = processEnergyData(timeSeriesData)
+        processedData.value = processData
+
+        counted.value = originalData.value.length
         drawChart()
       } else {
         console.error('No valid data found.')
@@ -212,7 +268,8 @@ svg {
   margin-top: 1em;
 }
 
-.custom-data-table th, .custom-data-table td {
+.custom-data-table th,
+.custom-data-table td {
   border: 1px solid #ccc;
   padding: 8px;
   text-align: center;

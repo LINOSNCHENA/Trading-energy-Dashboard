@@ -38,7 +38,7 @@
   import { computed, onMounted, ref, watch } from 'vue'
   import * as d3 from 'd3'
   import EnergyServices from '@/services/EnergyServices'
-  import { TimeSeriesDaily } from '@/types/types'
+  import { ITimeSeriesDaily } from '@/types/types'
 
   const minAmount = ref<number | null>(null)
   const maxAmount = ref<number | null>(null)
@@ -168,7 +168,7 @@
     try {
       const data = await EnergyServices.getDailyData()
       if (data && typeof data === 'object' && 'Time Series (Daily)' in data) {
-        const timeSeriesData = data['Time Series (Daily)'] as TimeSeriesDaily
+        const timeSeriesData = data['Time Series (Daily)'] as ITimeSeriesDaily
         const filteredDataPoints = Object.values(timeSeriesData).map(entry =>
           parseFloat(entry['4. close'])
         ).reverse()
@@ -193,102 +193,65 @@
     }
   })
 </script>
-
 <style scoped>
 .header-container h2 {
   text-align: center;
   font-size: small;
   text-transform: uppercase;
+  margin: auto;
 }
 
-/* General styles */
 .filter-row {
   margin-bottom: 1em;
-  overflow: visible;
-  flex-direction: row;
-  width: 100%;
-  max-height: 15vh;
-  background: green;
+  margin: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1em;
 }
 
 .chart-card {
   margin: 0;
   padding: 0;
   flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: greenyellow;
+  background: gainsboro;
+  color: black;
+  min-height: 60vh;
+  max-height: 80vh;
 }
 
-svg {
-  border: 3px solid green;
+.chart-card svg {
   width: 100%;
-  min-height: 60vh;
-  max-height: 90vh;
-  height: auto;
+  /* Make SVG fill the width of the card */
+  height: 100%;
+  /* Make SVG fill the height of the card */
   display: block;
-  margin: auto;
-  padding: 0;
+  font-size: small;
+  text-transform: uppercase;
 }
 
 .responsive-text-field {
   width: 100%;
 }
 
-/* Mobile styles */
 @media (max-width: 600px) {
   .filter-row {
     flex-direction: column;
-    flex-wrap: wrap;
-    gap: 0.5em;
   }
 
   .responsive-text-field {
     margin-bottom: 1em;
   }
-
-  .responsive-btn {
-    width: 100%;
-  }
 }
 
-/* Tablet and small desktop styles */
-@media (min-width: 600px) and (max-width: 960px) {
-  .filter-row {
-    flex-direction: row;
-    gap: 0.5em;
-  }
-
-  .responsive-text-field {
-    max-width: 30%;
-    background: pink;
-  }
-}
-
-/* Large desktop styles */
-@media (min-width: 960px) {
+@media (min-width: 600px) {
   .filter-row {
     flex-direction: row;
   }
 
-  .responsive-text-field {
-    max-width: 30%;
-    background: pink;
-  }
-
-  .chart-card {
-    margin: 0;
-    padding: 0;
-    flex-grow: 1;
-  }
-
-  .responsive-btn {
-    width: auto;
-    max-width: 400px;
-  }
-
-  svg {
-    border: 3px solid green;
-    width: 100%;
-    max-height: 90vh;
-    height: auto;
-  }
 }
 </style>

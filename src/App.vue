@@ -31,7 +31,7 @@
             <a :class="{ active: currentPath === '#/lined' }" href="#/lined">5. Area Lines</a>
           </li>
           <li>
-            <a :class="{ active: currentPath === '#/tables' }" href="#/tables">5. Data Tables</a>
+            <a :class="{ active: currentPath === '#/tables' }" href="#/tables">6. Data Tables</a>
           </li>
 
         </ul>

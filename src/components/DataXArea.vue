@@ -45,7 +45,8 @@
   import { computed, onMounted, ref, watch } from 'vue'
   import * as d3 from 'd3'
   import EnergyServices from '@/services/EnergyServices'
-  import { IDataPoint, IMinMaxMap, ITimeSeriesDaily } from '@/types/types'
+  import { IDataPoint, ITimeSeriesDaily } from '@/types/types'
+  import { processEnergyData } from '@/utils/dataProcessedDaily'
 
   const minAmount = ref<number | null>(null)
   const maxAmount = ref<number | null>(null)
@@ -246,48 +247,6 @@
       console.error('An error occurred while fetching the JSON data:', error)
     }
   })
-
-  function getMonthDay (dateString: string): string {
-    const date = new Date(dateString)
-    const day = String(date.getDate()).padStart(2, '0')
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    return `${month}-${day}`
-  }
-
-  function processEnergyData (data: { [key: string]: { '4. close': string } }): IDataPoint[] {
-    const monthlyGroups: { [key: string]: number[] } = {}
-    const currentYearData: IDataPoint[] = []
-
-    Object.entries(data).forEach(([date, { '4. close': close }]) => {
-      const price = parseFloat(close)
-      const monthDay = getMonthDay(date)
-      if (!monthlyGroups[monthDay]) {
-        monthlyGroups[monthDay] = []
-      }
-      monthlyGroups[monthDay].push(price)
-      if (new Date(date).getFullYear() === new Date().getFullYear()) {
-        currentYearData.push({
-          date,
-          price,
-          current: 0,
-        })
-      }
-    })
-
-    const minMaxMapResult = Object.entries(monthlyGroups).reduce((map, [monthDay, values]) => {
-      const minValue = Math.min(...values)
-      const maxValue = Math.max(...values)
-      const difValue = Number((maxValue - minValue).toFixed(2))
-      map[monthDay] = { min: minValue, max: maxValue, current: 2024, difference: difValue, price: difValue }
-      return map
-    }, {} as IMinMaxMap)
-
-    return currentYearData.map(({ date }) => {
-      const monthDay = getMonthDay(date)
-      const minMax = minMaxMapResult[monthDay] || { min: 0, max: 0, current: 0, price: 0, difference: 0 }
-      return { date, ...minMax }
-    })
-  }
 
   watch([minAmount, maxAmount], () => {
     drawChart()
