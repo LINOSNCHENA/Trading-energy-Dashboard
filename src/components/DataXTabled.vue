@@ -1,36 +1,31 @@
 <template>
   <v-container>
     <div class="header-container">
-      <h2>Line of Maximum of complete datapoints: {{ filteredX }} / {{ counted }}</h2>
-    </div>
+      <h2>Data Tables of complete datapoints: {{ filteredX }} / {{ counted }}</h2>
+    </div>    <v-pre> {{ filteredData[0] }}</v-pre>
+    <v-card class="data-table-card">
+      <v-card-title>Filtered Data</v-card-title>
+      <table class="custom-data-table">
+        <thead>
+          <tr>
+            <th>Index</th>
+            <th>Date</th>
+            <th>Price</th>
+            <th>Min Price</th>
+            <th>Max Price</th>
+          </tr>
+        </thead>
 
-    <v-row align="center" class="filter-row" justify="space-evenly" no-gutters>
-      <v-col cols="12" sm="4">
-        <v-text-field
-          v-model.number="minAmount"
-          aria-label="Minimum Price"
-          class="responsive-text-field"
-          label="Minimum Price"
-          placeholder="Enter minimum price"
-          type="number"
-        />
-      </v-col>
-      <v-col cols="12" sm="4">
-        <v-text-field
-          v-model.number="maxAmount"
-          aria-label="Maximum Price"
-          class="responsive-text-field"
-          label="Maximum Price"
-          placeholder="Enter maximum price"
-          type="number"
-        />
-      </v-col>
-    </v-row>
-
-    <v-card class="chart-card">
-      <v-card-text>
-        <svg ref="chart" aria-label="Line Chart" />
-      </v-card-text>
+        <tbody>
+          <tr v-for="item,index in filteredData" :key="item.date">
+            <td>{{ index+1 }}</td>
+            <td>{{ item.date }}</td>
+            <td>{{ item.price }}</td>
+            <td>{{ calculatedMinAmount }}</td>
+            <td>{{ calculatedMaxAmount }}</td>
+          </tr>
+        </tbody>
+      </table>
     </v-card>
   </v-container>
 </template>
@@ -226,6 +221,7 @@ svg {
 .custom-data-table th {
   background-color: #f5f5f5;
   font-weight: bold;
+  background: teal;
 }
 
 .responsive-text-field {

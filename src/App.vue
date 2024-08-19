@@ -3,7 +3,7 @@
     <header>
       <a class="logo" href="#">
         <span class="logo-text">TRADING DASHBOARD</span>
-        <span class="user-info">| User: {{ loginUser }}</span>
+        <span class="user-info">| User : {{ loginUser }}</span>
       </a>
       <nav aria-label="Main Navigation" :class="{ opened: isMenuOpened }">
         <img
@@ -14,7 +14,7 @@
           :src="closeSvgPath"
           @click="closeMenu"
         >
-        <ul>
+        <ul class="logo1">
           <li>
             <a :class="{ active: currentPath === '#/daily' }" href="#/daily">1. Daily Summary</a>
           </li>
@@ -28,8 +28,12 @@
             <a :class="{ active: currentPath === '#/area' }" href="#/area">4. Area Analysis</a>
           </li>
           <li>
-            <a :class="{ active: currentPath === '#/minimum' }" href="#/minimum">5. Area Lines</a>
+            <a :class="{ active: currentPath === '#/lined' }" href="#/lined">5. Area Lines</a>
           </li>
+          <li>
+            <a :class="{ active: currentPath === '#/tables' }" href="#/tables">5. Data Tables</a>
+          </li>
+
         </ul>
       </nav>
       <img
@@ -54,7 +58,8 @@
   import TradeWeekly from './components/DataWeekly.vue'
   import TradeMonthly from './components/DataMonthly.vue'
   import TradeArea from './components/DataXArea.vue'
-  import TradeMinimum from './components/DataXLineX.vue'
+  import TradeLined from './components/DataXLineX.vue'
+  import TradeTabled from './components/DataXTabled.vue'
   import { useAuthStore } from './stores/AppsAuth'
   const storeAUT = useAuthStore()
   const loginUser = ref()
@@ -68,7 +73,8 @@
     '/monthly': TradeMonthly,
     '/weekly': TradeWeekly,
     '/area': TradeArea,
-    '/minimum': TradeMinimum,
+    '/lined': TradeLined,
+    '/tables': TradeTabled,
     '/': TradeDaily,
     '*': { template: '<h1>Not Found</h1>' },
   }

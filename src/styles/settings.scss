@@ -14,7 +14,7 @@
   --color-gray-3: #58667e;
   --text-sm-2: 12px;
   --link-hover-bg: #d9d9d9;
-  --link-active-bg: #c0c0c0; /* Background color for active link */
+  --link-active-bg: #c0c0c0; 
 }
 
 /* Base Styles */
@@ -70,9 +70,10 @@ h1 {
   flex-direction: column;
   width: 100%;
   min-height: 100vh; 
-  height: 100vh; /* Full viewport height */
+  height: 100vh;
   margin: 0 auto;
   background: var(--bg-card-color);
+
 }
 
 /* Header */
@@ -136,16 +137,28 @@ nav {
 /* Logo */
 .logo {
   display: flex;
-  align-items: center; /* Vertically centers the content */
-  justify-content: space-between; /* Spreads the logo content evenly */
+  align-items: center; 
+  justify-content: space-between; 
   color: var(--color-primary);
   padding: 0 1rem;
 
   span {
     color: var(--color-gray-3);
-    margin-left: 0.5rem; /* Adjust spacing between elements */
+    margin-left: 0.5rem; 
   }
 }
+
+.logo1 {
+  list-style-type: none;
+  display: flex;
+  margin-right: 10vw; 
+  padding: 0;
+}
+
+.logo1 li {
+  margin-right: 20px; 
+}
+
 
 /* Responsive Styles */
 @media (min-width: 680px) {
