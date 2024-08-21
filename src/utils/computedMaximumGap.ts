@@ -40,16 +40,14 @@ export function maximumMinimumPices (data: {
       const maxValue = Math.max(...values)
       const difference = Number((maxValue - minValue).toFixed(2))
 
-      const currentMatch = currentYearData.find(
-        dataPoint => getMonthDay(dataPoint.date) === monthDay
-      )
+      const currentMatch = currentYearData.find(dataPoint => getMonthDay(dataPoint.date) === monthDay)
 
       map[monthDay] = {
         min: minValue,
         max: maxValue,
         difference,
         price: difference,
-        current: currentMatch ? currentMatch.price : difference,
+        current: currentMatch ? currentMatch.price : 0,
       }
 
       return map
@@ -76,15 +74,14 @@ export function maximumMinimumPices (data: {
       current: 0,
     }
 
-    const isSameYear =
-      new Date(date).getFullYear() === new Date().getFullYear()
+    const isCurrentYear = new Date(date).getFullYear() === new Date().getFullYear()
     return {
       date: formatDate(date),
       min: minMax.min,
       max: minMax.max,
       difference: minMax.difference,
       price,
-      current: isSameYear ? price : minMax.difference,
+      current: isCurrentYear ? price : 0,
     }
   })
 }

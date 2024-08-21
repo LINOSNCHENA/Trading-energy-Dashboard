@@ -1,13 +1,13 @@
 <template>
   <v-container>
     <div class="header-container">
-      <h2>Data Tables of complete datapoints: {{ filteredX }} / {{ counted }}| Stored{{ storedData.length }}</h2>
+      <h2>Data Tables of complete datapoints: {{ filteredX }} / {{ counted }}| Stored{{ storedData }}</h2>
     </div>
     <v-row>
       <v-col cols="6">
-        <v-pre>{{ filteredData[0] }}</v-pre>
+        <!-- <v-pre>{{ filteredData[0] }}</v-pre> -->
         <v-card class="data-table-card">
-          <v-card-title>Filtered Data - Original Table ({{ filteredData.length }})</v-card-title>
+          <v-card-title>Prices Data - Original Table ({{ filteredData.length }})</v-card-title>
           <table class="custom-data-table">
             <thead>
               <tr>
@@ -36,9 +36,9 @@
       </v-col>
 
       <v-col cols="6">
-        <v-pre>{{ processedData[0] }}</v-pre>
+        <!-- <v-pre>{{ sortedProcessedData[0] }}</v-pre> -->
         <v-card class="data-table-card">
-          <v-card-title>Filtered Data - Process Table ({{ processedData.length }})</v-card-title>
+          <v-card-title>Prices Data - Process Table ({{ processedData.length }})</v-card-title>
           <table class="custom-data-table">
             <thead>
               <tr>
@@ -56,7 +56,7 @@
                 <td>{{ index + 1 }}</td>
                 <td>{{ item.date }}</td>
                 <td>{{ item.price }}</td>
-                <td>{{ item }}</td>
+                <td>{{ item.min }}</td>
                 <td>{{ item.max }}</td>
                 <td>{{ item.difference }}</td>
                 <td>{{ item.current }}</td>
@@ -76,6 +76,7 @@
   import { IDataPoint, ITimeSeriesDaily } from '@/types/types'
   import { useAuthStore } from '@/stores/AppsAuth'
   import { maximumMinimumPices } from '@/utils/computedMaximumGap'
+  import { getRawData } from '@/utils/computedWholeData'
 
   const minAmount = ref<number | null>(null)
   const maxAmount = ref<number | null>(null)
@@ -104,15 +105,11 @@
   })
 
   const sortedFilteredData = computed(() => {
-    const first = filteredData.value.slice().sort((b, a) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    console.log(first)
     return filteredData.value.slice().sort((b, a) => (a.price) - (b.price))
   })
 
   const sortedProcessedData = computed(() => {
-    const dated = processedData.value.slice().sort((b, a) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    console.log(dated)
-    return filteredData.value.slice().sort((b, a) => (a.price) - (b.price))
+    return processedData.value.slice().sort((b, a) => (a.price) - (b.price))
   })
 
   function getDayMonth (date: string): string {
@@ -205,24 +202,19 @@
       const data = await EnergyServices.getDailyData()
       if (data && typeof data === 'object' && 'Time Series (Daily)' in data) {
         const timeSeriesData = data['Time Series (Daily)'] as ITimeSeriesDaily
-        const filteredDataPoints = Object.values(timeSeriesData).map(entry =>
-          parseFloat(entry['4. close'])
-        ).reverse()
-        const labels = Object.keys(timeSeriesData).reverse()
+        const dataProcessing = maximumMinimumPices(timeSeriesData)
+        processedData.value = dataProcessing
+        const rawData = getRawData(timeSeriesData)
+        originalData.value = rawData
 
-        originalData.value = labels.map((date, index) => ({
-          date,
-          price: filteredDataPoints[index],
-          current: filteredDataPoints[index],
-          difference: maxAmount.value || 0,
-        }))
-
-        const processData = maximumMinimumPices(timeSeriesData)
-        processedData.value = processData
+        //    await storeAUT.fetchData()
+        storedData.value = storeAUT.pricesData
         counted.value = originalData.value.length
 
-        await storeAUT.fetchData()
-        storedData.value = storeAUT.pricesData
+        console.log(originalData.value[0])
+        console.log(processedData.value[0])
+        console.log(sortedProcessedData.value[0])
+
         drawChart()
       } else {
         console.error('No valid data found.')
