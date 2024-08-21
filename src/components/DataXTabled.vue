@@ -1,12 +1,11 @@
 <template>
   <v-container>
     <div class="header-container">
-      <h2>Data Tables of complete datapoints: {{ filteredX }} / {{ counted }}</h2>
+      <h2>Data Tables of complete datapoints: {{ filteredX }} / {{ counted }}| Stored{{ storedData.length }}</h2>
     </div>
-    <!-- Grid layout with two columns -->
     <v-row>
       <v-col cols="6">
-        <!-- <v-pre>{{ filteredData[0] }}</v-pre> -->
+        <v-pre>{{ filteredData[0] }}</v-pre>
         <v-card class="data-table-card">
           <v-card-title>Filtered Data - Original Table ({{ filteredData.length }})</v-card-title>
           <table class="custom-data-table">
@@ -37,7 +36,7 @@
       </v-col>
 
       <v-col cols="6">
-        <!-- <v-pre>{{ processedData[0] }}</v-pre> -->
+        <v-pre>{{ processedData[0] }}</v-pre>
         <v-card class="data-table-card">
           <v-card-title>Filtered Data - Process Table ({{ processedData.length }})</v-card-title>
           <table class="custom-data-table">
@@ -57,7 +56,7 @@
                 <td>{{ index + 1 }}</td>
                 <td>{{ item.date }}</td>
                 <td>{{ item.price }}</td>
-                <td>{{ item.min }}</td>
+                <td>{{ item }}</td>
                 <td>{{ item.max }}</td>
                 <td>{{ item.difference }}</td>
                 <td>{{ item.current }}</td>
@@ -75,7 +74,8 @@
   import * as d3 from 'd3'
   import EnergyServices from '@/services/EnergyServices'
   import { IDataPoint, ITimeSeriesDaily } from '@/types/types'
-  import { processEnergyData } from '@/utils/dataProcessedDaily'
+  import { useAuthStore } from '@/stores/AppsAuth'
+  import { maximumMinimumPices } from '@/utils/computedMaximumGap'
 
   const minAmount = ref<number | null>(null)
   const maxAmount = ref<number | null>(null)
@@ -84,6 +84,8 @@
   const originalData = ref<IDataPoint[]>([])
   const processedData = ref<IDataPoint[]>([])
   const currentYear = new Date().getFullYear()
+  const storeAUT = useAuthStore()
+  const storedData = ref<IDataPoint[]>([])
 
   const filteredData = computed(() => {
     const min = minAmount.value ?? 0
@@ -191,7 +193,6 @@
               .y(d => newY(d.price))(d as any)
           })
       })
-
     svgElement.call(zoom)
   }
 
@@ -216,10 +217,12 @@
           difference: maxAmount.value || 0,
         }))
 
-        const processData = processEnergyData(timeSeriesData)
+        const processData = maximumMinimumPices(timeSeriesData)
         processedData.value = processData
-
         counted.value = originalData.value.length
+
+        await storeAUT.fetchData()
+        storedData.value = storeAUT.pricesData
         drawChart()
       } else {
         console.error('No valid data found.')

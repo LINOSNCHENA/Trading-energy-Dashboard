@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <div class="header-container">
-      <h2>Weekly records of complete datapoints: {{ filteredX }} / {{ counted }}</h2>
+      <h2>Monthly records of complete datapoints: {{ filteredX }} / {{ counted }}</h2>
     </div>
     <v-row align="center" class="filter-row" justify="space-evenly" no-gutters>
       <v-col cols="12" sm="4">
@@ -35,66 +35,33 @@
 </template>
 
 <script setup lang="ts">
-
   import { computed, onMounted, ref, watch } from 'vue'
   import * as d3 from 'd3'
   import EnergyServices from '@/services/EnergyServices'
-  import { ITimeSeriesDaily } from '@/types/types'
+  import { IDataPoint, ITimeSeriesDaily } from '@/types/types'
+  import { calculateWeeklyAverages } from '@/utils/computedWeeklyData'
 
   const minAmount = ref<number | null>(null)
   const maxAmount = ref<number | null>(null)
   const counted = ref(0)
   const filteredX = ref(0)
-  const originalData = ref<{ date: string; amount: number }[]>([])
+  const originalData = ref<IDataPoint[]>([])
 
   const calculatedMaxAmount = computed(() => {
-    const amounts = originalData.value.map(item => item.amount)
-    return amounts.length > 0 ? Math.max(...amounts) : null
+    const prices = originalData.value.map(item => item.price)
+    return prices.length > 0 ? Math.max(...prices) : null
   })
 
   const calculatedMinAmount = computed(() => {
-    const amounts = originalData.value.map(item => item.amount)
-    return amounts.length > 0 ? Math.min(...amounts) : null
+    const prices = originalData.value.map(item => item.price)
+    return prices.length > 0 ? Math.min(...prices) : null
   })
 
   const filteredData = computed(() => {
     const min = minAmount.value ?? calculatedMinAmount.value ?? 0
     const max = maxAmount.value ?? calculatedMaxAmount.value ?? Infinity
-    return originalData.value.filter(d => d.amount >= min && d.amount <= max)
+    return originalData.value.filter(d => d.price >= min && d.price <= max)
   })
-
-  function getISOWeek (date: string): string {
-    const currentDate = new Date(date)
-    const yearStart = new Date(Date.UTC(currentDate.getFullYear(), 0, 1))
-    const weekNumber = Math.ceil(((currentDate.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
-    return `${currentDate.getFullYear()}-W${weekNumber.toString().padStart(2, '0')}`
-  }
-
-  function calculateWeeklyAverages (data: { date: string; amount: number }[]): { date: string; amount: number }[] {
-    const weeklyTotals: Record<string, number> = {}
-    const weeklyCounts: Record<string, number> = {}
-
-    // Aggregate data by ISO week
-    for (const entry of data) {
-      const weekStart = getISOWeek(entry.date)
-      if (!weeklyTotals[weekStart]) {
-        weeklyTotals[weekStart] = 0
-        weeklyCounts[weekStart] = 0
-      }
-      weeklyTotals[weekStart] += entry.amount
-      weeklyCounts[weekStart] += 1
-    }
-
-    const weeklyAverages: { date: string; amount: number }[] = []
-    for (const week in weeklyTotals) {
-      weeklyAverages.push({
-        date: week,
-        amount: weeklyTotals[week] / weeklyCounts[week],
-      })
-    }
-
-    return weeklyAverages
-  }
 
   const drawChart = () => {
     const svgElement = d3.select<SVGSVGElement, unknown>('svg')
@@ -106,20 +73,20 @@
     filteredX.value = data.length
     if (data.length === 0) return
 
-    const parseTime = d3.timeParse('%Y-W%W')
-    const formatTime = d3.timeFormat('%Y-W%W')
+    const parseTime = d3.timeParse('%Y-%m')
+    const formatTime = d3.timeFormat('%Y-%m')
     const x = d3.scaleTime()
       .domain(d3.extent(data, d => parseTime(d.date) as Date) as [Date, Date])
       .range([0, containerWidth - 80])
 
     const y = d3.scaleLinear()
-      .domain([0, d3.max(data, d => d.amount) as number])
+      .domain([0, d3.max(data, d => d.price) as number])
       .nice()
       .range([containerHeight - 60, 0])
 
-    const line = d3.line<{ date: string; amount: number }>()
+    const line = d3.line<IDataPoint>()
       .x(d => x(parseTime(d.date) as Date))
-      .y(d => y(d.amount))
+      .y(d => y(d.price))
 
     svgElement
       .attr('width', containerWidth)
@@ -143,7 +110,6 @@
       .attr('stroke', 'steelblue')
       .attr('stroke-width', 1.5)
       .attr('d', line)
-    console.log(data[0])
 
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([1, 10])
@@ -157,7 +123,7 @@
         yAxis.call(d3.axisLeft(newY))
 
         path.attr('d', line.x(d => newX(parseTime(d.date) as Date))
-          .y(d => newY(d.amount)))
+          .y(d => newY(d.price)))
       })
 
     svgElement.call(zoom)
@@ -179,9 +145,15 @@
 
         originalData.value = labels.map((date, index) => ({
           date,
-          amount: filteredDataPoints[index],
+          price: filteredDataPoints[index],
+          current: 0,
+          difference: 0,
+          max: 0,
+          min: 0,
         }))
         counted.value = originalData.value.length
+
+        // Initialize minAmount and maxAmount with computed values
         minAmount.value = calculatedMinAmount.value
         maxAmount.value = calculatedMaxAmount.value
 

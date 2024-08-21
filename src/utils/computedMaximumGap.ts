@@ -7,7 +7,9 @@ export function getMonthDay (dateString: string): string {
   return `${month}-${day}`
 }
 
-export function processEnergyData (data: { [key: string]: { '4. close': string } }): IDataPoint[] {
+export function maximumMinimumPices (data: {
+  [key: string]: { '4. close': string };
+}): IDataPoint[] {
   const monthlyGroups: { [key: string]: number[] } = {}
   const currentYearData: IDataPoint[] = []
 
@@ -21,12 +23,11 @@ export function processEnergyData (data: { [key: string]: { '4. close': string }
     }
     monthlyGroups[monthDay].push(price)
 
-    // Collect data for the current year
     if (new Date(date).getFullYear() === new Date().getFullYear()) {
       currentYearData.push({
         date,
         price,
-        current: price, // Initially set current to price for the same year
+        current: price,
         difference: 0,
       })
     }
@@ -39,12 +40,10 @@ export function processEnergyData (data: { [key: string]: { '4. close': string }
       const maxValue = Math.max(...values)
       const difference = Number((maxValue - minValue).toFixed(2))
 
-      // Check if there's a match in currentYearData for the same month-day
       const currentMatch = currentYearData.find(
         dataPoint => getMonthDay(dataPoint.date) === monthDay
       )
 
-      // Set 'current' as the difference if there's no match in the current year
       map[monthDay] = {
         min: minValue,
         max: maxValue,
@@ -67,7 +66,6 @@ export function processEnergyData (data: { [key: string]: { '4. close': string }
     })
   }
 
-  // Step 3: Map current year data with correct 'current' value
   return currentYearData.map(({ date, price }) => {
     const monthDay = getMonthDay(date)
     const minMax = minMaxMapResult[monthDay] || {
@@ -75,18 +73,18 @@ export function processEnergyData (data: { [key: string]: { '4. close': string }
       max: 0,
       difference: 0,
       price: 0,
-      current: 0, // Default to 0 if no match found
+      current: 0,
     }
 
-    // If the year matches, the current value should be the same as the price
-    const isSameYear = new Date(date).getFullYear() === new Date().getFullYear()
+    const isSameYear =
+      new Date(date).getFullYear() === new Date().getFullYear()
     return {
       date: formatDate(date),
       min: minMax.min,
       max: minMax.max,
       difference: minMax.difference,
-      price, // Keep the original price for this date
-      current: isSameYear ? price : minMax.difference, // Use price if same year, otherwise use the difference
+      price,
+      current: isSameYear ? price : minMax.difference,
     }
   })
 }

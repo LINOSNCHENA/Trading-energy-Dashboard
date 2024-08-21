@@ -38,61 +38,30 @@
   import { computed, onMounted, ref, watch } from 'vue'
   import * as d3 from 'd3'
   import EnergyServices from '@/services/EnergyServices'
-  import { ITimeSeriesDaily } from '@/types/types'
+  import { IDataPoint, ITimeSeriesDaily } from '@/types/types'
+  import { calculateMonthlyAverages } from '@/utils/computedMonthlyData'
 
   const minAmount = ref<number | null>(null)
   const maxAmount = ref<number | null>(null)
   const counted = ref(0)
   const filteredX = ref(0)
-  const originalData = ref<{ date: string; amount: number }[]>([])
+  const originalData = ref<IDataPoint[]>([])
 
   const calculatedMaxAmount = computed(() => {
-    const amounts = originalData.value.map(item => item.amount)
-    return amounts.length > 0 ? Math.max(...amounts) : null
+    const prices = originalData.value.map(item => item.price)
+    return prices.length > 0 ? Math.max(...prices) : null
   })
 
   const calculatedMinAmount = computed(() => {
-    const amounts = originalData.value.map(item => item.amount)
+    const amounts = originalData.value.map(item => item.price)
     return amounts.length > 0 ? Math.min(...amounts) : null
   })
 
   const filteredData = computed(() => {
     const min = minAmount.value ?? calculatedMinAmount.value ?? 0
     const max = maxAmount.value ?? calculatedMaxAmount.value ?? Infinity
-    return originalData.value.filter(d => d.amount >= min && d.amount <= max)
+    return originalData.value.filter(d => d.price >= min && d.price <= max)
   })
-
-  function getMonthYear (date: string): string {
-    const currentDate = new Date(date)
-    const month = (currentDate.getMonth() + 1).toString().padStart(2, '0')
-    const year = currentDate.getFullYear()
-    return `${year}-${month}`
-  }
-
-  function calculateMonthlyAverages (data: { date: string; amount: number }[]): { date: string; amount: number }[] {
-    const monthlyTotals: Record<string, number> = {}
-    const monthlyCounts: Record<string, number> = {}
-
-    for (const entry of data) {
-      const monthYear = getMonthYear(entry.date)
-      if (!monthlyTotals[monthYear]) {
-        monthlyTotals[monthYear] = 0
-        monthlyCounts[monthYear] = 0
-      }
-      monthlyTotals[monthYear] += entry.amount
-      monthlyCounts[monthYear] += 1
-    }
-
-    const monthlyAverages: { date: string; amount: number }[] = []
-    for (const monthYear in monthlyTotals) {
-      monthlyAverages.push({
-        date: monthYear,
-        amount: monthlyTotals[monthYear] / monthlyCounts[monthYear],
-      })
-    }
-
-    return monthlyAverages
-  }
 
   const drawChart = () => {
     const svgElement = d3.select<SVGSVGElement, unknown>('svg')
@@ -111,13 +80,13 @@
       .range([0, containerWidth - 80])
 
     const y = d3.scaleLinear()
-      .domain([0, d3.max(data, d => d.amount) as number])
+      .domain([0, d3.max(data, d => d.price) as number])
       .nice()
       .range([containerHeight - 60, 0])
 
-    const line = d3.line<{ date: string; amount: number }>()
+    const line = d3.line<{ date: string; price: number }>()
       .x(d => x(parseTime(d.date) as Date))
-      .y(d => y(d.amount))
+      .y(d => y(d.price))
 
     svgElement
       .attr('width', containerWidth)
@@ -154,7 +123,7 @@
         yAxis.call(d3.axisLeft(newY))
 
         path.attr('d', line.x(d => newX(parseTime(d.date) as Date))
-          .y(d => newY(d.amount)))
+          .y(d => newY(d.price)))
       })
 
     svgElement.call(zoom)
@@ -176,8 +145,13 @@
 
         originalData.value = labels.map((date, index) => ({
           date,
-          amount: filteredDataPoints[index],
+          price: filteredDataPoints[index],
+          current: 0,
+          difference: 0,
+          max: 0,
+          min: 0,
         }))
+
         counted.value = originalData.value.length
 
         // Initialize minAmount and maxAmount with computed values

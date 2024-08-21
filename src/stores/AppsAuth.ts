@@ -1,9 +1,12 @@
 import { defineStore } from 'pinia'
+
 interface HealthAuthState {
   loading: boolean;
-  error: string | null;
-  rate: any;
-  user: any;
+  error: any | null;
+  rate: number;
+  user: string;
+  pricesData: any | null;
+  url:string
 }
 
 export const useAuthStore = defineStore('authStore', {
@@ -12,28 +15,45 @@ export const useAuthStore = defineStore('authStore', {
     error: null,
     user: 'Guest@gmail.com',
     rate: 0,
+    pricesData: null,
+    url: 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=AAPL&outputsize=full&apikey=123',
   }),
 
   actions: {
-    async isAuthorizedAdmin (user: string | undefined) {
-      const enforcer = String(user)
+    async fetchData () {
+      this.loading = true
+      try {
+        const response = await fetch(this.url)
+        if (!response.ok) {
+          throw new Error('Failed to fetch data')
+        }
+        console.log(response)
+        const data = await response.json()
+        this.pricesData = data
+        return data
+      } catch (error) {
+        this.error = error || 'An error occurred'
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async isAuthorizedAdmin (user?: string) {
+      const normalizedUser = String(user || this.user).toLowerCase()
       const authorizedEmails = [
         'test1@gmail.com',
         'test2@gmail.com',
         'test3@gmail.com',
       ]
-      this.formatUser(enforcer)
-      return authorizedEmails.includes(enforcer)
+      return authorizedEmails.includes(normalizedUser)
     },
 
-    async isAuthoririsedRevoked () {
-      const enforcer = 'Guestmail.com'
-      this.formatUser(enforcer)
+    async revokeAuthorization () {
+      this.user = 'Guest@gmail.com'
     },
 
-    formatUser (date: any) {
-      this.user = date
-      return this.user
+    setUser (user: string) {
+      this.user = user
     },
   },
 
@@ -41,8 +61,14 @@ export const useAuthStore = defineStore('authStore', {
     loadedRates (state) {
       return state.rate
     },
-    loadedUsers (state) {
+    loadedUser (state) {
       return state.user
+    },
+    isLoading (state) {
+      return state.loading
+    },
+    loadedPrices (state) {
+      return state.pricesData
     },
   },
 })

@@ -16,22 +16,19 @@
         >
         <ul class="logo1">
           <li>
-            <a :class="{ active: currentPath === '#/daily' }" href="#/daily">1. Daily Summary</a>
+            <a :class="{ active: currentPath === '#/weekly' }" href="#/weekly">1. Weekly Overview</a>
           </li>
           <li>
-            <a :class="{ active: currentPath === '#/weekly' }" href="#/weekly">2. Weekly Overview</a>
+            <a :class="{ active: currentPath === '#/monthly' }" href="#/monthly">2. Monthly Trends</a>
           </li>
           <li>
-            <a :class="{ active: currentPath === '#/monthly' }" href="#/monthly">3. Monthly Trends</a>
+            <a :class="{ active: currentPath === '#/area' }" href="#/area">3. Area Analysis</a>
           </li>
           <li>
-            <a :class="{ active: currentPath === '#/area' }" href="#/area">4. Area Analysis</a>
+            <a :class="{ active: currentPath === '#/lined' }" href="#/lined">4. Area Lines</a>
           </li>
           <li>
-            <a :class="{ active: currentPath === '#/lined' }" href="#/lined">5. Area Lines</a>
-          </li>
-          <li>
-            <a :class="{ active: currentPath === '#/tables' }" href="#/tables">6. Data Tables</a>
+            <a :class="{ active: currentPath === '#/tables' }" href="#/tables">5. Data Tables</a>
           </li>
 
         </ul>
@@ -54,7 +51,6 @@
   import { computed, onMounted, ref } from 'vue'
   import closeSvgPath from '@/assets/close.svg'
   import menuSvgPath from '@/assets/menu.svg'
-  import TradeDaily from '@/components/DataDaily.vue'
   import TradeWeekly from './components/DataWeekly.vue'
   import TradeMonthly from './components/DataMonthly.vue'
   import TradeArea from './components/DataXArea.vue'
@@ -69,13 +65,12 @@
   }
 
   const routes: Routes = {
-    '/daily': TradeDaily,
     '/monthly': TradeMonthly,
     '/weekly': TradeWeekly,
     '/area': TradeArea,
     '/lined': TradeLined,
     '/tables': TradeTabled,
-    '/': TradeDaily,
+    '/': TradeWeekly,
     '*': { template: '<h1>Not Found</h1>' },
   }
 

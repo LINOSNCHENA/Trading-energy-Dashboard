@@ -46,7 +46,7 @@
   import * as d3 from 'd3'
   import EnergyServices from '@/services/EnergyServices'
   import { IDataPoint, ITimeSeriesDaily } from '@/types/types'
-  import { processEnergyData } from '@/utils/dataProcessedDaily'
+  import { maximumMinimumPices } from '@/utils/computedMaximumGap'
 
   const minAmount = ref<number | null>(null)
   const maxAmount = ref<number | null>(null)
@@ -134,7 +134,7 @@
       .attr('aria-label', 'Data Line Plot')
       .attr('d', line)
 
-    const tooltip = d3.select('body') // Attach the tooltip to the body instead of the SVG container
+    const tooltip = d3.select('body')
       .append('div')
       .attr('class', 'tooltip')
       .style('position', 'absolute')
@@ -144,7 +144,7 @@
       .style('padding', '5px')
       .style('border-radius', '5px')
       .style('font-size', '12px')
-      .style('pointer-events', 'none') // Prevents tooltip from interfering with mouse events
+      .style('pointer-events', 'none')
 
     g.selectAll('circle')
       .data(currentYearDataPoints)
@@ -234,7 +234,7 @@
       const data = await EnergyServices.getDailyData()
       if (data && typeof data === 'object' && 'Time Series (Daily)' in data) {
         const timeSeriesData = data['Time Series (Daily)'] as ITimeSeriesDaily
-        const processedData = processEnergyData(timeSeriesData)
+        const processedData = maximumMinimumPices(timeSeriesData)
         originalData.value = processedData
         counted.value = originalData.value.length
         minAmount.value = calculatedMinAmount.value

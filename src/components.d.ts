@@ -7,12 +7,9 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    copy: typeof import('./components/DataXLineX copy.vue')['default']
-    DataDaily: typeof import('./components/DataDaily.vue')['default']
     DataMonthly: typeof import('./components/DataMonthly.vue')['default']
     DataWeekly: typeof import('./components/DataWeekly.vue')['default']
     DataXArea: typeof import('./components/DataXArea.vue')['default']
-    DataXArea2: typeof import('./components/DataXArea2.vue')['default']
     DataXLineX: typeof import('./components/DataXLineX.vue')['default']
     DataXTabled: typeof import('./components/DataXTabled.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
