@@ -1,3 +1,4 @@
+import { IDataPoint } from '@/types/types'
 import { defineStore } from 'pinia'
 
 interface HealthAuthState {
@@ -5,8 +6,8 @@ interface HealthAuthState {
   error: any | null;
   rate: number;
   user: string;
-  pricesData: any | null;
-  url:string
+  pricesData: IDataPoint[];
+  url: string;
 }
 
 export const useAuthStore = defineStore('authStore', {
@@ -15,7 +16,7 @@ export const useAuthStore = defineStore('authStore', {
     error: null,
     user: 'Guest@gmail.com',
     rate: 0,
-    pricesData: null,
+    pricesData: [],
     url: 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=AAPL&outputsize=full&apikey=123',
   }),
 
@@ -69,6 +70,9 @@ export const useAuthStore = defineStore('authStore', {
     },
     loadedPrices (state) {
       return state.pricesData
+    },
+    loadedRecords (state) {
+      return state.pricesData.length
     },
   },
 })

@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <div class="header-container">
-      <h2>Data Tables of complete datapoints: {{ filteredX }} / {{ counted }}| Stored{{ storedData }}</h2>
+      <h2>Data Tables of complete datapoints: {{ filteredX }} / {{ counted }}| Stored ({{ storedData }})</h2>
     </div>
     <v-row>
       <v-col cols="6">
@@ -36,7 +36,6 @@
       </v-col>
 
       <v-col cols="6">
-        <!-- <v-pre>{{ sortedProcessedData[0] }}</v-pre> -->
         <v-card class="data-table-card">
           <v-card-title>Prices Data - Process Table ({{ processedData.length }})</v-card-title>
           <table class="custom-data-table">
@@ -80,13 +79,13 @@
 
   const minAmount = ref<number | null>(null)
   const maxAmount = ref<number | null>(null)
-  const counted = ref(0)
-  const filteredX = ref(0)
   const originalData = ref<IDataPoint[]>([])
   const processedData = ref<IDataPoint[]>([])
   const currentYear = new Date().getFullYear()
   const storeAUT = useAuthStore()
-  const storedData = ref<IDataPoint[]>([])
+  const storedData = ref(0)
+  const counted = ref(0)
+  const filteredX = ref(0)
 
   const filteredData = computed(() => {
     const min = minAmount.value ?? 0
@@ -208,8 +207,9 @@
         originalData.value = rawData
 
         //    await storeAUT.fetchData()
-        storedData.value = storeAUT.pricesData
+        storedData.value = storeAUT.loadedRecords
         counted.value = originalData.value.length
+        filteredX.value = sortedProcessedData.value.length
 
         console.log(originalData.value[0])
         console.log(processedData.value[0])
